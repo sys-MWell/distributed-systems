@@ -20,4 +20,5 @@ def register():
     return jsonify({'token': auth_token})
 
 if __name__ == '__main__':
+    # Microservice IP and PORT
     app.run(host="localhost", port=50004, debug=True)

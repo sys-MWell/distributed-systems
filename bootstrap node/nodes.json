@@ -3,13 +3,7 @@
     {
       "connection_type": "auth",
       "ip": "127.0.0.1",
-      "port": 50005,
-      "status": "online"
-    },
-    {
-      "connection_type": "auth",
-      "ip": "127.0.0.1",
-      "port": 50005,
+      "port": 58606,
       "status": "online"
     }
   ]

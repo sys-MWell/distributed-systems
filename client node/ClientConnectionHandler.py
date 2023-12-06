@@ -51,7 +51,7 @@ class ClientConnection:
         # When connection is initally established to boostrap
         ip, port = sock.getpeername()
 
-        for i in range(0,randint(0, 4)):
+        for i in range(0,randint(0, 2)):
             print("Connection found, establishing connection...")
             time.sleep(2)
 

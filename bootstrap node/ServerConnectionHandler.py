@@ -85,6 +85,7 @@ class ServerConnection:
 
     def add_connection(self, sock):
         ip, port = sock.getpeername()
+        print()
         print(f"Creating a new connection to: {ip}:{port}")
         connection = Connection(ip, port, sock)
         events = selectors.EVENT_READ | selectors.EVENT_WRITE

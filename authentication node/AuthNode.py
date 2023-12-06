@@ -10,6 +10,7 @@ class abstractAuth:
         self.connection = None
         self.uiThread = threading.Thread(target=self.ui)
         self.running = True
+        print(f"START: Starting authentication node on {self.host}:{self.port}")
 
     # Simple UI thread
     def ui(self):
@@ -44,6 +45,9 @@ class abstractAuth:
         # stop the network components and the UI thread
         self.networkHandler.quit()
         self.uiThread.join()
+
+    def client_connection(self):
+        print("cc")
 
 if __name__ == "__main__":
     # Hardcoded bootstrap prime node - ip, port - CHANGE IP TO BOOSTRAP IP

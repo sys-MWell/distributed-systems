@@ -5,7 +5,7 @@ from ClientNetworkInterface import ClientNetworkInterface
 import threading
 
 class abstractClient:
-    def __init__(self, host="127.0.0.1", port=50000):
+    def __init__(self, host="127.0.0.1", port=50001):
         self.host = host
         self.port = port
         self.networkHandler = ClientNetworkInterface()
@@ -15,22 +15,34 @@ class abstractClient:
 
     # Simple UI thread
     def ui(self):
-        # Handle incoming messages from the server - at the moment that is simply "display them to the user"
+        # Handle incoming messages from the server
         while self.running:
             if self.connection:
                 message = self.connection.iBuffer.get()
                 if message:
-                    print(message)
+                    if message == 'auth':
+                        print("need to connect to auth")
+                        # Hardcoded bootstrap prime node - ip, port - CHANGE IP TO BOOSTRAP IP
+                        print("Waiting for authentication...")
+                        #client = abstractClient("127.0.0.1", 50005)
+                        #client.process()
+                    elif message.startswith('authNodeConn'):
+                        contextOptionCommand = "conOptComAuthReq"
+                        print("Receiving authentication node information...")
+                        if self.connection:
+                            time.sleep(10)
+                            self.connection.oBuffer.put(contextOptionCommand)
+                    elif message.startswith('authNodeConfirm'):
+                        print(message)
 
     def process(self):
         # Start the UI thread and start the network components
         self.uiThread.start()
         self.connection = self.networkHandler.start_client(self.host, self.port)
-
         self.contextual_menu()
 
         while self.running:
-            message = input("Please enter a command: ")
+            message = input("")
             if self.connection:
                 self.connection.oBuffer.put(message)
             else:
