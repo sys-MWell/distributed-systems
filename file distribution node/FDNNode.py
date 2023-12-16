@@ -1,15 +1,15 @@
 # All of the processing code has now been pulled into this file - the network code remains in the other file Abstract...
 import time
 from datetime import datetime
-from AuthNetworkInterface import AuthNetworkInterface
+from FDNNetworkInterface import FDNNetworkInterface
 import threading
 import netifaces
 
-class abstractAuth:
+class abstractFDN:
     def __init__(self, host="127.0.0.1", port=50000):
         self.host = host
         self.port = port
-        self.networkHandler = AuthNetworkInterface()
+        self.networkHandler = FDNNetworkInterface()
         self.connection = None
         self.uiThread = threading.Thread(target=self.ui)
         self.running = True
@@ -29,10 +29,10 @@ class abstractAuth:
     def process(self):
         # Start the UI thread and start the network components
         self.uiThread.start()
-        self.connection = self.networkHandler.start_auth(self.host, self.port)
+        self.connection = self.networkHandler.start_FDN(self.host, self.port)
 
         while self.running:
-            message = "auth"
+            message = "fdn"
             if self.connection:
                 self.connection.oBuffer.put(message)
                 message = input()
@@ -50,7 +50,7 @@ class abstractAuth:
         except:
             pass
 
-class AuthFunctionalityHandler:
+class FDNFunctionalityHandler:
     def __init__(self, network):
         self.network = network
         self.running = True
@@ -91,5 +91,5 @@ class AuthFunctionalityHandler:
 
 if __name__ == "__main__":
     # Hardcoded bootstrap prime node - ip, port - CHANGE IP TO BOOSTRAP IP
-    auth = abstractAuth("127.0.0.1", 50001)
-    auth.process()
+    FDN = abstractFDN("127.0.0.1", 50001)
+    FDN.process()

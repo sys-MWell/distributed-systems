@@ -1,16 +1,16 @@
 import socket
 import threading
-from AuthConnectionHandler import AuthConnection
+from FDNConnectionHandler import FDNConnection
 from enum import Enum
 
 class Role(Enum):
     SERVER = 1
     CLIENT = 2
 
-class AuthNetworkInterface:
+class FDNNetworkInterface:
     def __init__(self):
         self.listeners = []
-        self.connectionHandler = AuthConnection()
+        self.connectionHandler = FDNConnection()
         self.running = True
 
     def start_server(self, ip, port, callbackHandler=None):
@@ -33,7 +33,7 @@ class AuthNetworkInterface:
             callBackHandler(connection)
 
     # Start client
-    def start_auth(self, ip, port, duration=20, retries=30):
+    def start_FDN(self, ip, port, duration=20, retries=30):
         # Modification starts here
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         conn.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

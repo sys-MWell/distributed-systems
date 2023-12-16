@@ -105,14 +105,14 @@ class FunctionalityHandler:
                                 connection.oBuffer.put("pong")
                                 name = "auth"
                                 self.handle_functional_nodes(connection, name, ip, port)
+                            ### CONTENT NODE
                             if message.startswith("content"):
                                 print()
                                 print(f"Content node connected")
                                 connection.oBuffer.put("pong")
                                 name = "content"
-                                if content_node == 0:
-                                    content_node_type = ContentNodes(content_node, ip, port, "authentication")
-                                    self.load_balancer("content", content_node_type, connection)
+                                self.load_balancer("content", connection, ip, port)
+
                                 self.handle_functional_nodes(connection, name, ip, port)
                             else:
                                 connection.oBuffer.put(f"Echoing: {message}")
@@ -131,17 +131,22 @@ class FunctionalityHandler:
             print(f"Auth {ip}:{port} saved unsuccessfully ", end="")
         print()
 
-    def load_balancer(self, node, info, connection):
+    def load_balancer(self, node, connection, ip, port):
         if node == "content":
             global content_node
             global content_nodes
-            print(f"Currently no content nodes available - establishing connection to first "
-                  f"content node")
-            content_node + +1
-            print("Assigning first content node to authentication node")
-            connection.oBuffer.put("cmd:node:auth")
-            content_nodes = info
-            info.display_info()
+            if content_node == 0:
+                print(f"Currently no content nodes available - establishing connection to first "
+                      f"content node")
+                content_node + +1
+                content_node_type = ContentNodes(content_node, ip, port, "authentication")
+                print("Assigning first content node to authentication node")
+                connection.oBuffer.put("cmd:node:auth")
+                content_nodes.append(content_node_type)
+                content_node_type.display_info()
+            if content_node >= 1:
+                print("more")
+
 
     def read_json_file(self):
         with open('nodes.json', 'r') as file:

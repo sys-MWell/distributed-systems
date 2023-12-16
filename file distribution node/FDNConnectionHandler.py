@@ -36,7 +36,7 @@ class Connection:
         self.lastSeenTime = datetime.now()
 
 
-class AuthConnection:
+class FDNConnection:
     def __init__(self):
         # Packet handling information
         self.selector = selectors.DefaultSelector()

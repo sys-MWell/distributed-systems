@@ -45,6 +45,10 @@ class abstractContent:
 
                                 if after_node == "fdn":
                                     print("Spawning file distribution node")
+                                    DETACHED_PROCESS = 0x00000008
+                                    pid = subprocess.Popen([sys.executable, "../file distribution node/FDNNode.py"],
+                                                           creationflags=subprocess.CREATE_NEW_CONSOLE |
+                                                                         subprocess.CREATE_NEW_PROCESS_GROUP).pid
                             else:
                                 print("Invalid command format.")
                         else:
