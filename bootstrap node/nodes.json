@@ -3,13 +3,19 @@
     {
       "connection_type": "content",
       "ip": "127.0.0.1",
-      "port": 61565,
+      "port": 65052,
+      "status": "online"
+    },
+    {
+      "connection_type": "content",
+      "ip": "127.0.0.1",
+      "port": 65057,
       "status": "online"
     },
     {
       "connection_type": "auth",
       "ip": "127.0.0.1",
-      "port": 61567,
+      "port": 65055,
       "status": "online"
     }
   ]

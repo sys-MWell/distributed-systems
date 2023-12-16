@@ -8,10 +8,10 @@ import os
 import json
 
 MAX_AUTH_NODES = 4  # Maximum number of authentication nodes
-auth_nodes = []  # List to keep track of authentication node processes
 content_node = 0
-content_nodes = []
-filedist_nodes = []
+content_nodes = []  # List to keep track of content nodes
+auth_nodes = []  # List to keep track of authentication node processes
+filedist_nodes = []  # List to keep track of file distribution node processes
 
 
 class ContentNodes:
@@ -135,18 +135,38 @@ class FunctionalityHandler:
         if node == "content":
             global content_node
             global content_nodes
+            # If no content nodes available, this first connected node will be authentication
             if content_node == 0:
                 print(f"Currently no content nodes available - establishing connection to first "
                       f"content node")
-                content_node + +1
+                content_node += 1
                 content_node_type = ContentNodes(content_node, ip, port, "authentication")
                 print("Assigning first content node to authentication node")
                 connection.oBuffer.put("cmd:node:auth")
                 content_nodes.append(content_node_type)
                 content_node_type.display_info()
-            if content_node >= 1:
-                print("more")
+            # If more then one content_node connected
+            elif content_node >= 1:
+                count_authentication = 0
+                count_filedistribution = 0
+                for nodes in content_nodes:
+                    if "authentication" in nodes.functionalNodes:
+                        count_authentication += 1
+                    if "filedistribution" in nodes.functionalNodes:
+                        count_filedistribution += 1
+                print(count_authentication)
+                print(count_filedistribution)
 
+                # 1 or more authentication nodes connected
+                if count_authentication >= 1:
+                    # If 0 file distribution nodes connected
+                    if count_filedistribution == 0:
+                        content_node += 1
+                        content_node_type = ContentNodes(content_node, ip, port, "filedistribution")
+                        print(f"Assigning content node {content_node} to file distribution node")
+                        connection.oBuffer.put("cmd:node:fdn")
+                        content_nodes.append(content_node_type)
+                        content_node_type.display_info()
 
     def read_json_file(self):
         with open('nodes.json', 'r') as file:

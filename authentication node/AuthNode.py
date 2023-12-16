@@ -13,7 +13,7 @@ class abstractAuth:
         self.connection = None
         self.uiThread = threading.Thread(target=self.ui)
         self.running = True
-
+        print("Authentication Node Initiated")
         # Get IP of CONTENT node
         self.nodeIp = self.getNodeAddress()
 

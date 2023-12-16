@@ -13,7 +13,7 @@ class abstractFDN:
         self.connection = None
         self.uiThread = threading.Thread(target=self.ui)
         self.running = True
-
+        print("File Distribution Node Initiated")
         # Get IP of CONTENT node
         self.nodeIp = self.getNodeAddress()
         
