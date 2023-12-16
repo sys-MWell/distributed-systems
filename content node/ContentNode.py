@@ -1,15 +1,17 @@
 # All of the processing code has now been pulled into this file - the network code remains in the other file Abstract...
 import time
 from datetime import datetime
-from AuthNetworkInterface import AuthNetworkInterface
+from ContentNetworkInterface import ContentNetworkInterface
 import threading
+import sys
+import subprocess
 import netifaces
 
-class abstractAuth:
+class abstractContent:
     def __init__(self, host="127.0.0.1", port=50000):
         self.host = host
         self.port = port
-        self.networkHandler = AuthNetworkInterface()
+        self.networkHandler = ContentNetworkInterface()
         self.connection = None
         self.uiThread = threading.Thread(target=self.ui)
         self.running = True
@@ -24,23 +26,43 @@ class abstractAuth:
             if self.connection:
                 message = self.connection.iBuffer.get()
                 if message:
-                    print(message)
+                    if message.startswith("cmd"):
+                        print()
+                        print("Command received from bootstrap node")
+                        # Split the command using ":" as the delimiter
+                        parts = message.split(":")
+                        if len(parts) >= 3 and parts[0] == "cmd":
+                            print(f"Spawn node command received from bootstrap")
+                            if len(parts) >= 3:
+                                after_node = parts[2]
+                                print(f"Extracted node type: {after_node}")
+                                if after_node == "auth":
+                                    print("Spawning authentication node")
+                                    DETACHED_PROCESS = 0x00000008
+                                    pid = subprocess.Popen([sys.executable, "../authentication node/AuthNode.py"],
+                                                           creationflags=subprocess.CREATE_NEW_CONSOLE |
+                                                                         subprocess.CREATE_NEW_PROCESS_GROUP).pid
+
+                                if after_node == "fdn":
+                                    print("Spawning file distribution node")
+                            else:
+                                print("Invalid command format.")
+                        else:
+                            print("Invalid command format.")
 
     def process(self):
         # Start the UI thread and start the network components
         self.uiThread.start()
-        self.connection = self.networkHandler.start_auth(self.host, self.port)
+        self.connection = self.networkHandler.start_content(self.host, self.port)
 
         while self.running:
-            message = "auth"
+            message = "content"
             if self.connection:
                 self.connection.oBuffer.put(message)
                 message = input()
 
-        # stop the network components and the UI thread
         self.networkHandler.quit()
         self.uiThread.join()
-
     def getNodeAddress(self):
         try:
             for interface in netifaces.interfaces():
@@ -50,7 +72,7 @@ class abstractAuth:
         except:
             pass
 
-class AuthFunctionalityHandler:
+class ContentFunctionalityHandler:
     def __init__(self, network):
         self.network = network
         self.running = True
@@ -91,5 +113,5 @@ class AuthFunctionalityHandler:
 
 if __name__ == "__main__":
     # Hardcoded bootstrap prime node - ip, port - CHANGE IP TO BOOSTRAP IP
-    auth = abstractAuth("127.0.0.1", 50001)
-    auth.process()
+    content = abstractContent("127.0.0.1", 50001)
+    content.process()

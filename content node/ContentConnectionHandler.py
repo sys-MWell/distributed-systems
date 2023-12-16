@@ -7,7 +7,6 @@ import time
 from datetime import datetime
 from random import randint
 
-
 class Connection:
     def __init__(self, ip, port, sock):
         self.iBuffer = queue.Queue()
@@ -37,7 +36,7 @@ class Connection:
         self.lastSeenTime = datetime.now()
 
 
-class ClientConnection:
+class ContentConnection:
     def __init__(self):
         # Packet handling information
         self.selector = selectors.DefaultSelector()
@@ -55,7 +54,7 @@ class ClientConnection:
             print("Connection found, establishing connection...")
             time.sleep(2)
 
-        print(f"Connecting to node: {ip}:{port}")
+        print(f"Connecting to bootstrap node: {ip}:{port}")
         connection = Connection(ip, port, sock)
         events = selectors.EVENT_READ | selectors.EVENT_WRITE
         self.selector.register(sock, events, data=connection)
@@ -118,7 +117,8 @@ class ClientConnection:
                     else:
                         if len(connection.networkBuffer) >= connection.packetHeaderLength:
                             # Get the length of the next packet
-                            connection.messageBytesRemaining = int(connection.networkBuffer[:connection.packetHeaderLength])
+                            connection.messageBytesRemaining = int(
+                                connection.networkBuffer[:connection.packetHeaderLength])
                             # remove the header from the network buffer
                             connection.networkBuffer = connection.networkBuffer[connection.packetHeaderLength:]
                             connection.messageInProgress = True
@@ -131,7 +131,7 @@ class ClientConnection:
             return False
 
     def get_message(self, ip, port):
-        print(f"Getting message from connection: {ip}:{port}")
+        # print(f"Getting message from connection: {ip}:{port}")
         for connection in self.connections:
             if connection.ip == ip and connection.port == port:
                 if not connection.iBuffer.empty():
@@ -174,3 +174,6 @@ class ClientConnection:
                             self.service_connection(key, mask)
         finally:
             self.selector.close()
+
+    def save_connection(self):
+        print("test")

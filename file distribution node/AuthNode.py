@@ -16,7 +16,7 @@ class abstractAuth:
 
         # Get IP of CONTENT node
         self.nodeIp = self.getNodeAddress()
-
+        
     # Simple UI thread
     def ui(self):
         # Handle incoming messages from the server - at the moment that is simply "display them to the user"

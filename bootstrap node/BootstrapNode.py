@@ -4,12 +4,32 @@ from datetime import datetime
 import threading
 import queue
 import subprocess
-from colorama import Fore, Back, Style
 import os
 import json
 
 MAX_AUTH_NODES = 4  # Maximum number of authentication nodes
 auth_nodes = []  # List to keep track of authentication node processes
+content_node = 0
+content_nodes = []
+filedist_nodes = []
+
+
+class ContentNodes:
+    def __init__(self, contentNumber, ip, port, functionalNodeType):
+        self.contentNumber = contentNumber
+        self.ip = ip
+        self.port = port
+        self.functionalNodes = functionalNodeType
+
+    def display_info(self):
+        """
+        Display information about the ContentNodes instance.
+        """
+        print(f"Content Number: {self.contentNumber}")
+        print(f"IP Address: {self.ip}")
+        print(f"Port Number: {self.port}")
+        print(f"Functional: {self.functionalNodes}")
+
 
 class FunctionalityHandler:
     def __init__(self, network):
@@ -34,13 +54,13 @@ class FunctionalityHandler:
             connection.add_timeout()
             try:
                 ip, port = connection.sock.getpeername()
-                print(f"{Fore.BLUE}{datetime.now()}{Style.RESET_ALL} ", end="")
+                print(f"{datetime.now()} ", end="")
                 print(
-                    f"{Fore.RED}The last message from {Fore.GREEN}{ip}:{port}{Fore.RED} sent more than 15 seconds ago, {connection.get_timeouts()} have occurred{Style.RESET_ALL}")
+                    f"The last message from {ip}:{port} sent more than 15 seconds ago, {connection.get_timeouts()} have occurred")
             except OSError as e:
                 if e.errno == 10038:  # WinError 10038: An operation was attempted on something that is not a socket
                     # Handle the error gracefully
-                    print(f"{Fore.RED}Connection closed {self.ip}:{self.port} disconnected...{Style.RESET_ALL}", end="")
+                    print(f"Connection closed {self.ip}:{self.port} disconnected...", end="")
                     self.connections.remove(connection)
                     print()
                     exit()
@@ -54,6 +74,7 @@ class FunctionalityHandler:
 
                 # Commands from nodes
                 try:
+                    global content_nodes
                     if not connection.iBuffer.empty():
                         message = connection.iBuffer.get()
                         if message:
@@ -64,8 +85,8 @@ class FunctionalityHandler:
                             ### CLIENT NODE
                             # User contextual menu input
                             if message.startswith("conOptCom"):
-                                print(f"{Fore.YELLOW}Received contextual menu input from: "
-                                      f"{Fore.GREEN}{ip}:{port} {Fore.YELLOW}message being {message} {Style.RESET_ALL}", end="")
+                                print(f"Received contextual menu input from: "
+                                      f"{ip}:{port} message being {message} ", end="")
                                 print()
                                 command_value = message[len("conOptCom+"):]
                                 if command_value == '0' or command_value == '1':
@@ -79,10 +100,19 @@ class FunctionalityHandler:
 
                             ### AUTH NODE
                             if message.startswith("auth"):
-                                print(f"{Fore.RED}AUTHENTICATION NODE DETECTED{Style.RESET_ALL}", end="")
+                                print(f"AUTHENTICATION NODE DETECTED", end="")
                                 print()
                                 connection.oBuffer.put("pong")
                                 name = "auth"
+                                self.handle_functional_nodes(connection, name, ip, port)
+                            if message.startswith("content"):
+                                print()
+                                print(f"Content node connected")
+                                connection.oBuffer.put("pong")
+                                name = "content"
+                                if content_node == 0:
+                                    content_node_type = ContentNodes(content_node, ip, port, "authentication")
+                                    self.load_balancer("content", content_node_type, connection)
                                 self.handle_functional_nodes(connection, name, ip, port)
                             else:
                                 connection.oBuffer.put(f"Echoing: {message}")
@@ -96,56 +126,22 @@ class FunctionalityHandler:
     def handle_functional_nodes(self, connection, name, ip, port):
         condition = connection.add_node_to_json(name, ip, port)
         if condition:
-            print(f"{Fore.GREEN}Auth {ip}:{port} {Fore.YELLOW}saved successfully {Style.RESET_ALL}", end="")
+            print(f"{name} node: {ip}:{port} saved successfully ", end="")
         else:
-            print(f"{Fore.RED}Auth {ip}:{port} {Fore.YELLOW}saved unsuccessfully {Style.RESET_ALL}", end="")
+            print(f"Auth {ip}:{port} saved unsuccessfully ", end="")
         print()
 
-    def load_balancer(self, node):
-        if node == 'authLB':
-            auth_process = subprocess.Popen(
-                ['python', '../authentication node/AuthNode.py'],
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                bufsize=1,  # Line buffering for real-time output
-                universal_newlines=True
-            )
-            auth_nodes.append(auth_process)
-            print(f"{Fore.RED}Started a new authentication node. {Fore.GREEN}Total nodes: {len(auth_nodes)}"
-                  f"{Style.RESET_ALL}\n", end="")
-            node_type = 'auth'
-            output_queue = queue.Queue()
-            input_queue = queue.Queue()
-
-            # Start threads for reading and writing
-            read_thread = threading.Thread(target=self.read_output, args=(auth_process.stdout, output_queue, node_type))
-            write_thread = threading.Thread(target=self.write_input, args=(auth_process.stdin, input_queue))
-
-            read_thread.start()
-            write_thread.start()
-            return 'done'
-
-    def read_output(self, pipe, output_queue, auth_type):
-        for line in iter(pipe.readline, b''):
-            output_queue.put(line.rstrip())
-            if auth_type == 'auth':
-                print(f"{Fore.RED}Auth node console: {Fore.YELLOW}{line.rstrip()} {Style.RESET_ALL}", end="")
-                print()
-
-    def write_input(self, pipe, input_queue):
-        while True:
-            try:
-                data = input_queue.get(timeout=1)  # Adjust timeout as needed
-            except queue.Empty:
-                continue
-
-            if data is None:
-                break
-
-            pipe.write(data.encode('utf-8'))
-            pipe.flush()
+    def load_balancer(self, node, info, connection):
+        if node == "content":
+            global content_node
+            global content_nodes
+            print(f"Currently no content nodes available - establishing connection to first "
+                  f"content node")
+            content_node + +1
+            print("Assigning first content node to authentication node")
+            connection.oBuffer.put("cmd:node:auth")
+            content_nodes = info
+            info.display_info()
 
     def read_json_file(self):
         with open('nodes.json', 'r') as file:
@@ -161,6 +157,7 @@ class FunctionalityHandler:
         # If no "auth" connection is found, return None values
         return None, None
 
+
 class AbstractServer:
     def __init__(self, host="127.0.0.1", port=50000):
         self.networkHandler = ServerNetworkInterface()
@@ -175,15 +172,6 @@ class AbstractServer:
         self.create_or_replace_json()
         # Handle connection to server process
         self.networkHandler.start_server(self.host, self.port, self.client_handler)
-        # while True:
-        #     clients = self.networkHandler.get_clients()
-        #     if len(clients) > 0:
-        #         print(f"{Fore.BLUE}{datetime.now()}{Style.RESET_ALL}")
-        #         for client in clients:
-        #             ip, port = client.sock.getpeername()
-        #             print(f"{Fore.YELLOW}{ip}:{port} {Style.RESET_ALL}", end="")
-        #         print()
-        #     time.sleep(2)
 
     def create_or_replace_json(self, filename='nodes.json'):
         # If JSON file exists remove and replace with fresh one
@@ -194,7 +182,8 @@ class AbstractServer:
             data = {"connections": []}
             json.dump(data, file, indent=2)
 
+
 if __name__ == "__main__":
     # Hardcoded bootstrap prime node - ip, port - CHANGE IP TO BOOSTRAP IP
-    server = AbstractServer("127.0.0.1", 50005)
+    server = AbstractServer("127.0.0.1", 50001)
     server.process()
