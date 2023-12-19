@@ -1,16 +1,3 @@
 {
-  "connections": [
-    {
-      "connection_type": "content",
-      "ip": "127.0.0.1",
-      "port": 50059,
-      "status": "online"
-    },
-    {
-      "connection_type": "auth",
-      "ip": "127.0.0.1",
-      "port": 50061,
-      "status": "online"
-    }
-  ]
+  "connections": []
 }

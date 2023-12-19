@@ -21,29 +21,32 @@ class abstractClient:
                 message = self.connection.iBuffer.get()
                 if message:
                     if message == 'auth':
-                        print("need to connect to auth")
                         # Hardcoded bootstrap prime node - ip, port - CHANGE IP TO BOOSTRAP IP
                         print("Waiting for authentication...")
-                        #client = abstractClient("127.0.0.1", 50005)
-                        #client.process()
+                    elif message.startswith('bootstrap'):
+                        cmdparts = message.split(":")
+                        if len(cmdparts) >= 3:
+                            if cmdparts[1] == "cmd":
+                                print("Command received from bootstrap")
+                                if cmdparts[2] == "auth":
+                                    nodeStatus = cmdparts[3]
+                                    if nodeStatus == '-1':
+                                        print("Authentication node unavailable")
+                                        print("Please try again...")
+                                        time.sleep(5)
+                                        print()
+                                        self.contextual_menu()
+
+                            # Context menu selection
+                            #connection.oBuffer.put(f"bootstrap:cmd:auth:-1")
+
+
                     elif message.startswith('authNodeConn'):
                         contextOptionCommand = "conOptComAuthReq"
                         print("Receiving authentication node information...")
                         if self.connection:
                             time.sleep(10)
                             self.connection.oBuffer.put(contextOptionCommand)
-                    elif message.startswith('authNodeConfirm'):
-                        print(message)
-                        # Split the string at "ip:" and "port:" to get the IP and port values
-                        ip_split = message.split("ip:")
-                        port_split = message.split("port:")
-
-                        # Extract the IP and port values
-                        ip = ip_split[1].split()[0].strip()
-                        port = port_split[1].strip()
-                        print(ip)
-                        print(port)
-                        self.node_connection('auth', ip, port)
 
 
     def process(self):
@@ -53,14 +56,14 @@ class abstractClient:
         self.contextual_menu()
 
         while self.running:
-            message = input("")
+            pass
             if self.connection:
-                self.connection.oBuffer.put(message)
+                pass
             else:
                 self.running = False
 
-            if message == "Quit":
-                self.running = False
+            # if message == "Quit":
+            #     self.running = False
 
         # stop the network components and the UI thread
         self.networkHandler.quit()
@@ -87,47 +90,10 @@ class abstractClient:
             print("Invalid option selected\n")
             time.sleep(1)
             self.contextual_menu()
-        contextOptionCommand = "conOptCom+"+contextOption
         contextOptionCommand = "client:cmd:context:"+contextOption
         if self.connection:
             self.connection.oBuffer.put(contextOptionCommand)
 
-# class abstractAuthClient:
-#     def __init__(self, host="127.0.0.1", port=50000):
-#         self.host = host
-#         self.port = port
-#         self.networkHandler = ClientNetworkInterface()
-#         self.connection = None
-#         self.uiThread = threading.Thread(target=self.ui)
-#         self.running = True
-#
-#     # Simple UI thread
-#     def ui(self):
-#         # Handle incoming messages from the server - at the moment that is simply "display them to the user"
-#         while self.running:
-#             if self.connection:
-#                 message = self.connection.iBuffer.get()
-#                 if message:
-#                     print(message)
-#
-#     def process(self):
-#         # Start the UI thread and start the network components
-#         self.uiThread.start()
-#         self.connection = self.networkHandler.start_client(self.host, self.port)
-#
-#         while self.running:
-#             message = input("Please enter a command: ")
-#             if self.connection:
-#                 self.connection.oBuffer.put(message)
-#             else:
-#                 self.running = False
-#
-#             if message == "Quit":
-#                 self.running = False
-#
-#         # stop the network components and the UI thread
-#         self.networkHandler.quit()
-#         self.uiThread.join()
 
 if __name__ == "__main__":
     # Hardcoded bootstrap prime node - ip, port - CHANGE IP TO BOOSTRAP IP

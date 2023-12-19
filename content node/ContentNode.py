@@ -7,6 +7,8 @@ import sys
 import subprocess
 import netifaces
 
+nodePort = 50000
+
 class abstractContent:
     def __init__(self, host="127.0.0.1", port=50000):
         self.host = host
@@ -56,11 +58,12 @@ class abstractContent:
 
     def process(self):
         # Start the UI thread and start the network components
+        global nodePort
         self.uiThread.start()
         self.connection = self.networkHandler.start_content(self.host, self.port)
 
         while self.running:
-            message = "content"
+            message = "content:cmd:spawn:" + str(self.nodeIp) +":"+ str(self.port)
             if self.connection:
                 self.connection.oBuffer.put(message)
                 message = input()

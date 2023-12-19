@@ -9,9 +9,10 @@ import netifaces
 
 auth_microservice_count = 0
 
+nodePort = 50001
 
 class abstractAuth:
-    def __init__(self, host="127.0.0.1", port=50000):
+    def __init__(self, host="127.0.0.1", port=50001):
         self.host = host
         self.port = port
         self.networkHandler = AuthNetworkInterface()
@@ -49,7 +50,9 @@ class abstractAuth:
         self.connection = self.networkHandler.start_auth(self.host, self.port)
 
         while self.running:
-            message = "auth:cmd:load:" + str(self.nodeIp) +":"+ str(self.port)
+            global nodePort
+            message = "auth:cmd:load:" + str(self.nodeIp) +":"+ str(nodePort)
+            nodePort ++ 1
             if self.connection:
                 self.connection.oBuffer.put(message)
                 message = input()

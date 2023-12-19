@@ -10,7 +10,7 @@ import json
 MAX_AUTH_NODES = 4  # Maximum number of authentication nodes
 content_node = 0
 content_nodes = []  # List to keep track of content nodes
-auth_nodes = []  # List to keep track of authentication node processes
+auth_ms_nodes = []  # List to keep track of authentication node processes
 filedist_nodes = []  # List to keep track of file distribution node processes
 
 
@@ -30,6 +30,21 @@ class ContentNodes:
         print(f"Port Number: {self.port}")
         print(f"Functional: {self.functionalNodes}")
 
+class Nodes:
+    def __init__(self, nodeNumber, nodeType, ip, port):
+        self.nodeNumber = nodeNumber
+        self.nodeType = nodeType
+        self.ip = ip
+        self.port = port
+
+    def display_info(self):
+        """
+        Display information about the ContentNodes instance.
+        """
+        print(f"Content Number: {self.nodeNumber}")
+        print(f"Node type: {self.nodeType}")
+        print(f"IP Address: {self.ip}")
+        print(f"Port Number: {self.port}")
 
 class FunctionalityHandler:
     def __init__(self, network):
@@ -88,34 +103,21 @@ class FunctionalityHandler:
                                 cmdparts = message.split(":")
                                 if len(cmdparts) >= 3:
                                     if cmdparts[1] == "cmd":
-                                        print("Received client command")
+                                        print("\n")
                                         if cmdparts[2] == "context":
                                             # Context menu selection
                                             print(f"Received contextual menu input from: "
                                                   f"{ip}:{port} message being {message} ", end="")
                                             command_value = cmdparts[3]
                                             if command_value == '0' or command_value == '1':
-                                                print("do something with client command")
-                                                print("Need auth node")
-                                                #if len()
-
+                                                # Client requires authentication node
+                                                if len(auth_ms_nodes) < 1:
+                                                    # No auth microservices available
+                                                    # Get bootstrap to spawn one idk
+                                                    connection.oBuffer.put(f"bootstrap:cmd:auth:-1")
+                                            else:
+                                                connection.oBuffer.put(f"bootstrap:cmd:auth:-1")
                                 #client:cmd:context:
-
-                            ### CLIENT NODE
-                            # User contextual menu input
-                            elif message.startswith("conOptCom"):
-                                print(f"Received contextual menu input from: "
-                                      f"{ip}:{port} message being {message} ", end="")
-                                print()
-                                command_value = message[len("conOptCom+"):]
-                                if command_value == '0' or command_value == '1':
-                                    lbstatus = self.load_balancer('authLB')
-                                    # Send auth
-                                    connection.oBuffer.put(f"authNodeConn : auth {lbstatus}")
-                            # elif message.startswith("conOptComAuthReq"):
-                            #     ip, port = self.read_json_file()
-                            #     print(f"AUTH IP IS: {ip},{port}")
-                            #     connection.oBuffer.put(f"authNodeConfirm: ip:{ip} port:{port}")
 
                             ### AUTH NODE
                             elif message.startswith("auth"):
@@ -132,16 +134,30 @@ class FunctionalityHandler:
                                             connection.oBuffer.put("cmd:spwn:ms")
                                         elif cmdparts[2] == "spwnms":
                                             print("Received micro-service details")
-                                            print(message)
+                                            ip = cmdparts[3]
+                                            port = cmdparts[4]
+                                            name = "auth-ms"
+                                            self.handle_functional_nodes(connection, name, ip, port)
+                                            auth_ms_nodes.append(Nodes(len(auth_ms_nodes)+1, "auth_ms_"+
+                                                                       str(len(auth_ms_nodes)+1), ip, port))
 
                             ### CONTENT NODE
                             elif message.startswith("content"):
-                                print()
-                                print(f"Content node connected")
-                                connection.oBuffer.put("pong")
-                                name = "content"
-                                self.load_balancer("content", connection, ip, port)
-                                self.handle_functional_nodes(connection, name, ip, port)
+                                cmdparts = message.split(":")
+                                if len(cmdparts) >= 3:
+                                    if cmdparts[1] == "cmd":
+                                        if cmdparts[2] == "spawn":
+                                            print()
+                                            print(f"Content node connected")
+                                            name = "content"
+                                            self.load_balancer("content", connection, ip, port)
+                                            self.handle_functional_nodes(connection, name, ip, port)
+                                        else:
+                                            print("1")
+                                    else:
+                                        print("2")
+                                else:
+                                    print("3")
                             else:
                                 connection.oBuffer.put(f"Echoing: {message}")
 
@@ -156,7 +172,7 @@ class FunctionalityHandler:
         if condition:
             print(f"{name} node: {ip}:{port} saved successfully ", end="")
         else:
-            print(f"Auth {ip}:{port} saved unsuccessfully ", end="")
+            print(f"{name} node {ip}:{port} saved unsuccessfully ", end="")
         print()
 
     def load_balancer(self, node, connection, ip, port):
