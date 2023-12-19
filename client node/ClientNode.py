@@ -1,8 +1,27 @@
 # All of the processing code has now been pulled into this file - the network code remains in the other file Abstract...
 import time
-
 from ClientNetworkInterface import ClientNetworkInterface
 import threading
+
+auth_nodes = []
+fdn_nodes = []
+
+class Nodes:
+    def __init__(self, nodeNumber, nodeType, ip, port):
+        self.nodeNumber = nodeNumber
+        self.nodeType = nodeType
+        self.ip = ip
+        self.port = port
+
+    def display_info(self):
+        """
+        Display information about the ContentNodes instance.
+        """
+        print(f"Content Number: {self.nodeNumber}")
+        print(f"Node type: {self.nodeType}")
+        print(f"IP Address: {self.ip}")
+        print(f"Port Number: {self.port}")
+
 
 class abstractClient:
     def __init__(self, host="127.0.0.1", port=50001):
@@ -30,7 +49,15 @@ class abstractClient:
                                 print("Command received from bootstrap")
                                 if cmdparts[2] == "auth":
                                     nodeStatus = cmdparts[3]
-                                    if nodeStatus == '-1':
+                                    if nodeStatus == '0':
+                                        # Connect to microservice
+                                        print(f"Received command: {message}")
+                                        nodeNumber = int(cmdparts[4])
+                                        nodeName = cmdparts[5]
+                                        nodeIP = cmdparts[6]
+                                        nodePort = cmdparts[7]
+                                        auth_nodes.append(Nodes(nodeNumber, nodeName, nodeIP, nodePort))
+                                    else:
                                         print("Authentication node unavailable")
                                         print("Please try again...")
                                         time.sleep(5)
@@ -61,9 +88,6 @@ class abstractClient:
                 pass
             else:
                 self.running = False
-
-            # if message == "Quit":
-            #     self.running = False
 
         # stop the network components and the UI thread
         self.networkHandler.quit()

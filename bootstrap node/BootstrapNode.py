@@ -8,6 +8,7 @@ import os
 import json
 
 MAX_AUTH_NODES = 4  # Maximum number of authentication nodes
+connected_clients = 0
 content_node = 0
 content_nodes = []  # List to keep track of content nodes
 auth_ms_nodes = []  # List to keep track of authentication node processes
@@ -115,6 +116,9 @@ class FunctionalityHandler:
                                                     # No auth microservices available
                                                     # Get bootstrap to spawn one idk
                                                     connection.oBuffer.put(f"bootstrap:cmd:auth:-1")
+                                                elif len(auth_ms_nodes) >= 1:
+                                                    # Auth microservice available
+                                                    self.load_balancer("authentication", connection, ip, port)
                                             else:
                                                 connection.oBuffer.put(f"bootstrap:cmd:auth:-1")
                                 #client:cmd:context:
@@ -212,6 +216,22 @@ class FunctionalityHandler:
                         content_nodes.append(content_node_type)
                         content_node_type.display_info()
 
+        elif node == "authentication":
+            print("auth")
+            if content_node < 5:
+                print("less than 5 connected clients")
+                microservice = auth_ms_nodes[0]
+                name = "auth-ms"
+                ms_connection = f"0:{name}:{microservice.ip}:{microservice.port}"
+                connection.oBuffer.put(f"bootstrap:cmd:auth:0:{ms_connection}")
+
+            if connected_clients >= 5:
+                print("more than 5 connected clients")
+
+
+        elif node == "filedistribution":
+            print("fdn")
+
     def read_json_file(self):
         with open('nodes.json', 'r') as file:
             data = json.load(file)
@@ -235,6 +255,8 @@ class AbstractServer:
         self.port = port
 
     def client_handler(self, clientConnection):
+        global connected_clients
+        connected_clients += 1
         self.functionalityHandler.add(clientConnection, self.host, self.port)
 
     def process(self):
