@@ -1,3 +1,4 @@
+import sys
 import netifaces
 from flask import Flask, request, jsonify
 import uuid
@@ -21,15 +22,13 @@ def register():
     return jsonify({'token': auth_token})
 
 if __name__ == '__main__':
-    # Microservice IP and PORT
+    # Default Microservice IP and PORT
     ip = 'localhost'
+    port = 50007
 
-    try:
-        for interface in netifaces.interfaces():
-            for link in netifaces.ifaddresses(interface)[netifaces.AF_INET]:
-                print(f"Node hosted on: {link['addr']}")
-                ip = link['addr']
-    except:
-        pass
+    # Check if IP and PORT parameters are provided via command-line arguments
+    if len(sys.argv) > 2:
+        ip = sys.argv[1]
+        port = int(sys.argv[2])
 
-    app.run(host=ip, port=50007, debug=True)
+    app.run(host=ip, port=port, debug=True)

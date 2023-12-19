@@ -88,6 +88,7 @@ class abstractClient:
             time.sleep(1)
             self.contextual_menu()
         contextOptionCommand = "conOptCom+"+contextOption
+        contextOptionCommand = "client:cmd:context:"+contextOption
         if self.connection:
             self.connection.oBuffer.put(contextOptionCommand)
 

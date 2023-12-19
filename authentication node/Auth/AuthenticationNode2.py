@@ -1,7 +1,7 @@
 import requests
 
 # URL of the AuthMicroservice
-auth_microservice_url = 'http://localhost:50004/register'  # Replace with the actual URL
+auth_microservice_url = 'http://localhost:50007/register'  # Replace with the actual URL
 
 # User details for registration
 user_details = {

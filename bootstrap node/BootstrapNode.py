@@ -54,9 +54,10 @@ class FunctionalityHandler:
             connection.add_timeout()
             try:
                 ip, port = connection.sock.getpeername()
-                print(f"{datetime.now()} ", end="")
-                print(
-                    f"The last message from {ip}:{port} sent more than 15 seconds ago, {connection.get_timeouts()} have occurred")
+                # print(f"{datetime.now()} ", end="")
+                # print(
+                #     f"The last message from {ip}:{port} sent more than 15 seconds ago, "
+                #     f"{connection.get_timeouts()} have occurred")
             except OSError as e:
                 if e.errno == 10038:  # WinError 10038: An operation was attempted on something that is not a socket
                     # Handle the error gracefully
@@ -78,13 +79,31 @@ class FunctionalityHandler:
                     if not connection.iBuffer.empty():
                         message = connection.iBuffer.get()
                         if message:
+                            ip, port = connection.sock.getpeername()
                             if message.startswith("ping"):
                                 connection.oBuffer.put("pong")
-                            ip, port = connection.sock.getpeername()
-                            print("INCOMING MESSAGES")
+
+                            ### CLIENT NODE
+                            elif message.startswith("client"):
+                                cmdparts = message.split(":")
+                                if len(cmdparts) >= 3:
+                                    if cmdparts[1] == "cmd":
+                                        print("Received client command")
+                                        if cmdparts[2] == "context":
+                                            # Context menu selection
+                                            print(f"Received contextual menu input from: "
+                                                  f"{ip}:{port} message being {message} ", end="")
+                                            command_value = cmdparts[3]
+                                            if command_value == '0' or command_value == '1':
+                                                print("do something with client command")
+                                                print("Need auth node")
+                                                #if len()
+
+                                #client:cmd:context:
+
                             ### CLIENT NODE
                             # User contextual menu input
-                            if message.startswith("conOptCom"):
+                            elif message.startswith("conOptCom"):
                                 print(f"Received contextual menu input from: "
                                       f"{ip}:{port} message being {message} ", end="")
                                 print()
@@ -93,26 +112,35 @@ class FunctionalityHandler:
                                     lbstatus = self.load_balancer('authLB')
                                     # Send auth
                                     connection.oBuffer.put(f"authNodeConn : auth {lbstatus}")
-                            if message.startswith("conOptComAuthReq"):
-                                ip, port = self.read_json_file()
-                                print(f"AUTH IP IS: {ip},{port}")
-                                connection.oBuffer.put(f"authNodeConfirm: ip:{ip} port:{port}")
+                            # elif message.startswith("conOptComAuthReq"):
+                            #     ip, port = self.read_json_file()
+                            #     print(f"AUTH IP IS: {ip},{port}")
+                            #     connection.oBuffer.put(f"authNodeConfirm: ip:{ip} port:{port}")
 
                             ### AUTH NODE
-                            if message.startswith("auth"):
-                                print(f"AUTHENTICATION NODE DETECTED", end="")
+                            elif message.startswith("auth"):
                                 print()
-                                connection.oBuffer.put("pong")
-                                name = "auth"
-                                self.handle_functional_nodes(connection, name, ip, port)
+                                cmdparts = message.split(":")
+                                if len(cmdparts) >= 3:
+                                    if cmdparts[1] == "cmd":
+                                        print("Received auth node command")
+                                        if cmdparts[2] == "load":
+                                            print(f"AUTHENTICATION NODE DETECTED", end="")
+                                            print()
+                                            name = "auth"
+                                            self.handle_functional_nodes(connection, name, ip, port)
+                                            connection.oBuffer.put("cmd:spwn:ms")
+                                        elif cmdparts[2] == "spwnms":
+                                            print("Received micro-service details")
+                                            print(message)
+
                             ### CONTENT NODE
-                            if message.startswith("content"):
+                            elif message.startswith("content"):
                                 print()
                                 print(f"Content node connected")
                                 connection.oBuffer.put("pong")
                                 name = "content"
                                 self.load_balancer("content", connection, ip, port)
-
                                 self.handle_functional_nodes(connection, name, ip, port)
                             else:
                                 connection.oBuffer.put(f"Echoing: {message}")
