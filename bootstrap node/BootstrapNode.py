@@ -110,7 +110,7 @@ class FunctionalityHandler:
                                             print(f"Received contextual menu input from: "
                                                   f"{ip}:{port} message being {message} ", end="")
                                             command_value = cmdparts[3]
-                                            if command_value == '0' or command_value == '1':
+                                            if command_value == '1' or command_value == '2':
                                                 # Client requires authentication node
                                                 if len(auth_ms_nodes) < 1:
                                                     # No auth microservices available
@@ -180,9 +180,9 @@ class FunctionalityHandler:
         print()
 
     def load_balancer(self, node, connection, ip, port):
+        global content_node
+        global content_nodes
         if node == "content":
-            global content_node
-            global content_nodes
             # If no content nodes available, this first connected node will be authentication
             if content_node == 0:
                 print(f"Currently no content nodes available - establishing connection to first "
@@ -204,7 +204,6 @@ class FunctionalityHandler:
                         count_filedistribution += 1
                 print(count_authentication)
                 print(count_filedistribution)
-
                 # 1 or more authentication nodes connected
                 if count_authentication >= 1:
                     # If 0 file distribution nodes connected

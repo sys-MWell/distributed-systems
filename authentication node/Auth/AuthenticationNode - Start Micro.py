@@ -43,4 +43,3 @@ else:
 
 # Terminate the microservice process
 print(f"Ended")
-os.kill(auth_microservice_processes.pid, signal.SIGTERM)

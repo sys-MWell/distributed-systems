@@ -1,25 +1,40 @@
 import sys
-import netifaces
+import os
 from flask import Flask, request, jsonify
 import uuid
 
 app = Flask(__name__)
+
+# Get the absolute path of the script
+script_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Endpoint for user registration
 @app.route('/register', methods=['POST'])
 def register():
     # Get user details from the request
     user_details = request.get_json()
+    print()
+    print("Client connected, information received")
 
-    # Generate an authentication token (you can use a more secure method for production)
+    # Generate an authentication token
     auth_token = str(uuid.uuid4())
 
-    # Save user details to a text file (you should use a database for production)
-    with open('userData.txt', 'a') as file:
-        file.write(f"Username: {user_details['username']}, Password: {user_details['password']}, Token: {auth_token}\n")
+    # Save user details to a text file
+    try:
+        # Check if the file exists, create it if it doesn't
+        user_data_file = os.path.join(script_dir, 'userData.txt')
+        if not os.path.exists(user_data_file):
+            with open(user_data_file, 'w'):  # 'w' mode will create the file if it doesn't exist
+                pass
+        with open(user_data_file, 'a') as file:
+            file.write(f"Username: {user_details['username']}, Password: {user_details['password']}, Token: {auth_token}\n")
 
-    # Return the authentication token
-    return jsonify({'token': auth_token})
+        print("Authentication successful, token generated")
+        # Return the authentication token
+        return jsonify({'token': auth_token})
+    except Exception as ex:
+        print(f"Exception: {ex}")
+
 
 if __name__ == '__main__':
     # Default Microservice IP and PORT

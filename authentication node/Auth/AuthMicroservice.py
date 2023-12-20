@@ -24,12 +24,12 @@ if __name__ == '__main__':
     # Microservice IP and PORT
     ip = 'localhost'
 
-    try:
-        for interface in netifaces.interfaces():
-            for link in netifaces.ifaddresses(interface)[netifaces.AF_INET]:
-                print(f"Node hosted on: {link['addr']}")
-                ip = link['addr']
-    except:
-        pass
+    # try:
+    #     for interface in netifaces.interfaces():
+    #         for link in netifaces.ifaddresses(interface)[netifaces.AF_INET]:
+    #             print(f"Node hosted on: {link['addr']}")
+    #             ip = link['addr']
+    # except:
+    #     pass
 
-    app.run(host=ip, port=50007, debug=True)
+    app.run(host=ip, port=50004, debug=True)
