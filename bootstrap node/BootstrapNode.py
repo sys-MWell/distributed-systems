@@ -11,13 +11,16 @@ MAX_AUTH_NODES = 4  # Maximum number of authentication nodes
 connected_clients = 0
 content_node = 0
 content_nodes = []  # List to keep track of content nodes
-auth_ms_nodes = []  # List to keep track of authentication node processes
-filedist_nodes = []  # List to keep track of file distribution node processes
+auth_nodes = []  # List to keep track of authentication nodes
+auth_ms_nodes = []  # List to keep track of authentication microservice nodes
+filedist_ms_nodes = []  # List to keep track of file distribution microservice nodes
+client_tokens = []
 
 
 class ContentNodes:
-    def __init__(self, contentNumber, ip, port, functionalNodeType):
+    def __init__(self, contentNumber, connection, ip, port, functionalNodeType):
         self.contentNumber = contentNumber
+        self.connection = connection
         self.ip = ip
         self.port = port
         self.functionalNodes = functionalNodeType
@@ -31,27 +34,32 @@ class ContentNodes:
         print(f"Port Number: {self.port}")
         print(f"Functional: {self.functionalNodes}")
 
+
 class Nodes:
-    def __init__(self, nodeNumber, nodeType, ip, port):
+    def __init__(self, nodeNumber, nodeType, connection, ip, port):
         self.nodeNumber = nodeNumber
         self.nodeType = nodeType
+        self.connection = connection
         self.ip = ip
         self.port = port
 
     def display_info(self):
         """
-        Display information about the ContentNodes instance.
+        Display information about Nodes instance.
         """
         print(f"Content Number: {self.nodeNumber}")
         print(f"Node type: {self.nodeType}")
         print(f"IP Address: {self.ip}")
         print(f"Port Number: {self.port}")
 
+
 class FunctionalityHandler:
     def __init__(self, network):
         self.network = network
         self.running = True
         self.connections = []
+        # What user main menu inputted
+        self.client_main_menu_input = ''
 
     # Add new client connection - new thread for every client
     def add(self, connection, ip, port):
@@ -104,7 +112,7 @@ class FunctionalityHandler:
                                 cmdparts = message.split(":")
                                 if len(cmdparts) >= 3:
                                     if cmdparts[1] == "cmd":
-                                        print("\n")
+                                        # print("\n")
                                         if cmdparts[2] == "context":
                                             # Context menu selection
                                             print(f"Received contextual menu input from: "
@@ -118,10 +126,38 @@ class FunctionalityHandler:
                                                     connection.oBuffer.put(f"bootstrap:cmd:auth:-1")
                                                 elif len(auth_ms_nodes) >= 1:
                                                     # Auth microservice available
-                                                    self.load_balancer("authentication", connection, ip, port)
+                                                    self.load_balancer("authentication", connection
+                                                                       , ip, port, None)
                                             else:
                                                 connection.oBuffer.put(f"bootstrap:cmd:auth:-1")
-                                #client:cmd:context:
+                                        elif cmdparts[2] == "menu":
+                                            if cmdparts[3] in ['3', '4', '5']:
+                                                global client_tokens
+                                                token_found = False
+                                                self.client_main_menu_input = cmdparts[3]
+                                                # Main menu selection 3/4/5
+                                                print()
+                                                print(f"Received main menu input from: "
+                                                      f"{ip}:{port} message being {message} ", end="")
+                                                # compare token with that stored in authentication node
+                                                # First check if bootstrap already stores authentication token
+                                                search_token = cmdparts[4]
+                                                for index, token in enumerate(client_tokens):
+                                                    if token == search_token:
+                                                        print(f"{search_token} found at index {index}.")
+                                                        token_found = True
+                                                        break
+                                                if token_found:
+                                                    print()
+                                                    print("Token found locally")
+                                                else:
+                                                    # Check with authentication node
+                                                    print()
+                                                    print("Token not found locally")
+                                                    self.load_balancer("authTokenCfirm", connection
+                                                                       , ip, port, search_token)
+                                            else:
+                                                print("Invalid main menu command")
 
                             ### AUTH NODE
                             elif message.startswith("auth"):
@@ -131,10 +167,14 @@ class FunctionalityHandler:
                                     if cmdparts[1] == "cmd":
                                         print("Received auth node command")
                                         if cmdparts[2] == "load":
-                                            print(f"AUTHENTICATION NODE DETECTED", end="")
+                                            print(f"New authentication node connection establishing...", end="")
                                             print()
                                             name = "auth"
                                             self.handle_functional_nodes(connection, name, ip, port)
+                                            global auth_nodes
+                                            # Bootstrap save auth node
+                                            auth_nodes.append(Nodes(len(auth_nodes) + 1, "auth_" +
+                                                                    str(len(auth_ms_nodes) + 1), connection, ip, port))
                                             connection.oBuffer.put("cmd:spwn:ms")
                                         elif cmdparts[2] == "spwnms":
                                             print("Received micro-service details")
@@ -142,8 +182,11 @@ class FunctionalityHandler:
                                             port = cmdparts[4]
                                             name = "auth-ms"
                                             self.handle_functional_nodes(connection, name, ip, port)
-                                            auth_ms_nodes.append(Nodes(len(auth_ms_nodes)+1, "auth_ms_"+
-                                                                       str(len(auth_ms_nodes)+1), ip, port))
+                                            auth_ms_nodes.append(Nodes(len(auth_ms_nodes) + 1, "auth_ms_" +
+                                                                       str(len(auth_ms_nodes) + 1),
+                                                                       None, ip, port))
+                                        elif cmdparts[2] == "token":
+                                            print(message)
 
                             ### CONTENT NODE
                             elif message.startswith("content"):
@@ -154,7 +197,7 @@ class FunctionalityHandler:
                                             print()
                                             print(f"Content node connected")
                                             name = "content"
-                                            self.load_balancer("content", connection, ip, port)
+                                            self.load_balancer("content", connection, ip, port, None)
                                             self.handle_functional_nodes(connection, name, ip, port)
                                         else:
                                             print("1")
@@ -179,16 +222,16 @@ class FunctionalityHandler:
             print(f"{name} node {ip}:{port} saved unsuccessfully ", end="")
         print()
 
-    def load_balancer(self, node, connection, ip, port):
+    def load_balancer(self, command, connection, ip, port, extra):
         global content_node
         global content_nodes
-        if node == "content":
+        if command == "content":
             # If no content nodes available, this first connected node will be authentication
             if content_node == 0:
                 print(f"Currently no content nodes available - establishing connection to first "
                       f"content node")
                 content_node += 1
-                content_node_type = ContentNodes(content_node, ip, port, "authentication")
+                content_node_type = ContentNodes(content_node, connection, ip, port, "authentication")
                 print("Assigning first content node to authentication node")
                 connection.oBuffer.put("cmd:node:auth")
                 content_nodes.append(content_node_type)
@@ -209,13 +252,23 @@ class FunctionalityHandler:
                     # If 0 file distribution nodes connected
                     if count_filedistribution == 0:
                         content_node += 1
-                        content_node_type = ContentNodes(content_node, ip, port, "filedistribution")
+                        content_node_type = ContentNodes(content_node, connection, port, "filedistribution")
                         print(f"Assigning content node {content_node} to file distribution node")
                         connection.oBuffer.put("cmd:node:fdn")
                         content_nodes.append(content_node_type)
                         content_node_type.display_info()
 
-        elif node == "authentication":
+        elif command == 'authTokenCfirm':
+            global auth_nodes
+            # Send command to authentication node to check client token
+            if 0 < len(auth_nodes) <= 1:
+                auth_node = auth_nodes[0]
+                auth_connection = auth_node.connection
+                token = extra
+                auth_connection.oBuffer.put(f"cmd:check:token:{token}")
+
+        elif command == "authentication":
+            # Send command to client with authentication microservice ip and port
             print("auth")
             if content_node < 5:
                 print("less than 5 connected clients")
@@ -228,7 +281,7 @@ class FunctionalityHandler:
                 print("more than 5 connected clients")
 
 
-        elif node == "filedistribution":
+        elif command == "filedistribution":
             print("fdn")
 
     def read_json_file(self):

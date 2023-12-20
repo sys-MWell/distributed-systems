@@ -69,7 +69,8 @@ class abstractClient:
                                             print()
                                             self.contextual_menu()
                                     else:
-                                        print("error1")
+                                        # Node already exists
+                                        self.node_connection()
 
                                 elif cmdparts[2] == "fdn":
                                     print("fdn")
@@ -90,11 +91,11 @@ class abstractClient:
         # If login
         if self.context_status == 1:
             # Login
-            self.authentication_login()
+            self.authentication('1')
         # If signup
         elif self.context_status == 2:
             # Signup
-            self.authentication_signup()
+            self.authentication('2')
         else:
             # Error
             print("An internal error has occurred")
@@ -107,6 +108,7 @@ class abstractClient:
         self.connection = self.networkHandler.start_client(self.host, self.port)
         self.contextual_menu()
 
+        # Continue running client process, always ready to accept and send messages
         while self.running:
             pass
             if self.connection:
@@ -147,15 +149,40 @@ class abstractClient:
         menuOptions = input("Please select an option:\n"
                               "1 - Retrieve list of available nodes\n"
                               "2 - List local audio files\n"
-                              "3 - Download audio files\n"
-                              "4 - Play audio file\n"
-                              "5 - Exit\n"
+                              "3 - List remote audio files\n"
+                              "4 - Download audio files\n"
+                              "5 - Play audio file\n"
+                              "6 - Exit\n"
                               "Option: ")
+        if menuOptions == "1":
+            print("Retrieve list of available nodes\n")
+        elif menuOptions == "2":
+            print("List local audio files\n")
+        elif menuOptions == "3":
+            print("List remote audio files\n")
+        elif menuOptions == "4":
+            print("Download audio files\n")
+        elif menuOptions == "5":
+            print("Play audio files\n")
+        elif menuOptions == "6":
+            print("Exit\n")
+        else:
+            print("Invalid input selected\n")
+            print()
+            time.sleep(4)
+            self.main_menu()
 
-    def authentication_login(self):
-        print("login")
+        # If user select option 3 or 4 -> Requires bootstrap
+        if menuOptions in ["3", "4"]:
+            menuOptionCmd = f"client:cmd:menu:{menuOptions}:{auth_token}"
+        if self.connection:
+            self.connection.oBuffer.put(menuOptionCmd)
+            time.sleep(3)
+            # HAVE A WAIT UNTIL HERE FOR REPLY?
 
-    def authentication_signup(self):
+            #self.main_menu()
+
+    def authentication(self, option):
         global nodes
         if len(nodes) > 0:
             # Check if auth node is saved in array
@@ -165,13 +192,21 @@ class abstractClient:
                 port = auth_ms_node.port
                 host = f"{ip}:{port}"
                 try:
-                    # Connct to authentication microservice - signup/register account
+                    # Connect to authentication microservice - signup/register account
                     authMicroserviceURL = f'http://{host}/register'  # Replace with the actual URL
                     print()
+
+                    # Setting option based of context menu input
+                    if option == '1':
+                        print("Login")
+                    elif option == '2':
+                        print("Register")
+
                     username = input("Username: ")
                     password = input("Password: ")
 
                     user_details = {
+                        'option': option,
                         'username': username,
                         'password': password
                     }
@@ -181,11 +216,13 @@ class abstractClient:
                         response = requests.post(authMicroserviceURL, json=user_details,
                                                  timeout=5)  # Adjust the timeout as needed
                     except requests.Timeout:
+                        # Error timeout
                         print("Request timed out. Connection to AuthMicroservice aborted.")
                         time.sleep(5)
                         print()
                         self.contextual_menu()
                     except requests.RequestException as ex:
+                        # Error exception
                         print(f"Request failed. Error: {ex}")
                         time.sleep(5)
                         print()
@@ -193,18 +230,24 @@ class abstractClient:
                     else:
                         # Retrieve the authentication token from the response
                         if response.status_code == 200:
+                            # Success - retrieved authentication token
                             global auth_token
                             token = response.json()['token']
-                            auth_token = token
-                            print(f"Received authentication token: {token}")
+                            auth_token = token.replace('Token: ', '')
+                            print(f"Received authentication token: {auth_token}")
+                            print()
+
+                            #self.main_menu()
                         else:
+                            # Error code
                             print(f"Failed to retrieve authentication token. Status code: {response.status_code}")
                             time.sleep(5)
                             print()
                             self.contextual_menu()
 
                 except Exception as ex:
-                    print(f"An error has occurred: {ex}")
+                    # Error login/signup, failed details
+                    print("Login failed, invalid details entered. Please try again.")
                     time.sleep(5)
                     print()
                     self.contextual_menu()

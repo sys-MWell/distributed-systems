@@ -1,4 +1,5 @@
 # All of the processing code has now been pulled into this file - the network code remains in the other file Abstract...
+import os
 import subprocess
 import sys
 import time
@@ -30,11 +31,12 @@ class abstractAuth:
             if self.connection:
                 message = self.connection.iBuffer.get()
                 if message:
+                    print()
+                    print(message)
                     # Break message loop
                     if message.startswith("cmd"):
                         parts = message.split(":")
                         if len(parts) >= 3 and parts[0] == "cmd":
-                            print()
                             print(f"Command received from bootstrap")
                             if len(parts) >= 3:
                                 after_node = parts[1]
@@ -42,7 +44,13 @@ class abstractAuth:
                                     after_node = parts[2]
                                     if after_node == "ms":
                                         print(f"Spawn micro-service command received")
-                                        self.authLoadBalancer()
+                                        self.authLoadBalancer(parts[1], None)
+                                if after_node == "check":
+                                    if parts[2] == "token":
+                                        # Check client token
+                                        token = parts[3]
+                                        print(f"Token received from bootstrap: {token}")
+                                        self.authLoadBalancer(parts[1], token)
 
     def process(self):
         # Start the UI thread and start the network components
@@ -70,11 +78,43 @@ class abstractAuth:
         except:
             pass
 
-    def authLoadBalancer(self):
+    def authLoadBalancer(self, command, extra):
         global auth_microservice_count
-        if auth_microservice_count == 0:
-            time.sleep(2)
-            self.spawnMicroservice()
+        if command == "spwn":
+            # Spawn microservice node command
+            if auth_microservice_count == 0:
+                time.sleep(2)
+                self.spawnMicroservice()
+        elif command == "check":
+            # Check token command
+            token = extra
+            if self.find_token_in_file(token):
+                print(f"Token '{token}' found in the file.")
+                tokenReply = f"auth:cmd:token:0:{token}"
+            else:
+                print(f"Token '{token}' not found in the file.")
+                tokenReply = f"auth:cmd:token:-1"
+            self.connection.oBuffer.put(tokenReply)
+
+    def find_token_in_file(self, token_to_find):
+        # If authentication node has client token savedS
+        try:
+            # Get the absolute path of the script
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            user_data_file = os.path.join(script_dir, 'userData.txt')
+            with open(user_data_file, 'r') as file:
+                for line in file:
+                    # Extract the 'Token:' value from the line
+                    if 'Token: ' in line:
+                        token_in_file = line.split('Token: ')[1].strip()
+
+                        # Compare with the local variable
+                        if token_in_file == token_to_find:
+                            return True  # Token found in the file
+            return False  # Token not found in the file
+        except Exception as ex:
+            print(ex)
+            return False
 
     def spawnMicroservice(self):
         print("Spawn microservice")
