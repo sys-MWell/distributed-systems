@@ -130,34 +130,32 @@ class FunctionalityHandler:
                                                                        , ip, port, None)
                                             else:
                                                 connection.oBuffer.put(f"bootstrap:cmd:auth:-1")
-                                        elif cmdparts[2] == "menu":
-                                            if cmdparts[3] in ['3', '4', '5']:
-                                                global client_tokens
-                                                token_found = False
-                                                self.client_main_menu_input = cmdparts[3]
-                                                # Main menu selection 3/4/5
+                                        elif cmdparts[2] == "fdn":
+                                            # Client requests FDN details
+                                            global client_tokens
+                                            token_found = False
+                                            print()
+                                            print(f"Received FDN request from: "
+                                                  f"{ip}:{port} message being {message} ", end="")
+                                            # compare token with that stored in authentication node
+                                            # First check if bootstrap already stores authentication token
+                                            search_token = cmdparts[3]
+                                            for index, token in enumerate(client_tokens):
+                                                if token == search_token:
+                                                    print(f"{search_token} found at index {index}.")
+                                                    token_found = True
+                                                    break
+                                            if token_found:
                                                 print()
-                                                print(f"Received main menu input from: "
-                                                      f"{ip}:{port} message being {message} ", end="")
-                                                # compare token with that stored in authentication node
-                                                # First check if bootstrap already stores authentication token
-                                                search_token = cmdparts[4]
-                                                for index, token in enumerate(client_tokens):
-                                                    if token == search_token:
-                                                        print(f"{search_token} found at index {index}.")
-                                                        token_found = True
-                                                        break
-                                                if token_found:
-                                                    print()
-                                                    print("Token found locally")
-                                                else:
-                                                    # Check with authentication node
-                                                    print()
-                                                    print("Token not found locally")
-                                                    self.load_balancer("authTokenCfirm", connection
-                                                                       , ip, port, search_token)
+                                                print("Token found locally")
                                             else:
-                                                print("Invalid main menu command")
+                                                # Check with authentication node
+                                                print()
+                                                print("Token not found locally")
+                                                self.load_balancer("authTokenCfirm", connection
+                                                                   , ip, port, search_token)
+                                        else:
+                                            print("Invalid command")
 
                             ### AUTH NODE
                             elif message.startswith("auth"):
@@ -186,7 +184,19 @@ class FunctionalityHandler:
                                                                        str(len(auth_ms_nodes) + 1),
                                                                        None, ip, port))
                                         elif cmdparts[2] == "token":
+                                            global client_tokens
                                             print(message)
+                                            status = cmdparts[3]
+                                            token = cmdparts[4]
+                                            if status == "0":
+                                                # Success, token confirmed
+                                                print("Valid token")
+                                                client_tokens.append(token)
+                                                # Now need to send FDN details to client
+                                            else:
+                                                # Failure, token not confirmed
+                                                print("Invalid token")
+                                                connection.oBuffer.put(f"bootstrap:cmd:token:-1")
 
                             ### CONTENT NODE
                             elif message.startswith("content"):

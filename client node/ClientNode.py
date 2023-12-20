@@ -75,6 +75,13 @@ class abstractClient:
                                 elif cmdparts[2] == "fdn":
                                     print("fdn")
 
+                                elif cmdparts[2] == "token":
+                                    if cmdparts[3] == "-1":
+                                        print("Token unavailable/invalid, connection failure")
+                                        print("Please try again...")
+                                        time.sleep(5)
+                                        self.contextual_menu()
+
                                 else:
                                     print("error2")
                             # Context menu selection
@@ -172,12 +179,13 @@ class abstractClient:
             time.sleep(4)
             self.main_menu()
 
+        # NEED TO CONNECT TO FDN
         # If user select option 3 or 4 -> Requires bootstrap
-        if menuOptions in ["3", "4"]:
-            menuOptionCmd = f"client:cmd:menu:{menuOptions}:{auth_token}"
-        if self.connection:
-            self.connection.oBuffer.put(menuOptionCmd)
-            time.sleep(3)
+        # if menuOptions in ["3", "4"]:
+        #     menuOptionCmd = f"client:cmd:menu:{menuOptions}:{auth_token}"
+        # if self.connection:
+        #     self.connection.oBuffer.put(menuOptionCmd)
+        #     time.sleep(3)
             # HAVE A WAIT UNTIL HERE FOR REPLY?
 
             #self.main_menu()
@@ -236,7 +244,11 @@ class abstractClient:
                             auth_token = token.replace('Token: ', '')
                             print(f"Received authentication token: {auth_token}")
                             print()
-
+                            # Get FDN details as login/signup successful
+                            fdnRqstCmd = f"client:cmd:fdn:{auth_token}"
+                            if self.connection:
+                                self.connection.oBuffer.put(fdnRqstCmd)
+                                time.sleep(3)
                             #self.main_menu()
                         else:
                             # Error code
