@@ -102,6 +102,7 @@ class FunctionalityHandler:
                     global content_nodes
                     if not connection.iBuffer.empty():
                         message = connection.iBuffer.get()
+                        global client_tokens
                         if message:
                             ip, port = connection.sock.getpeername()
                             if message.startswith("ping"):
@@ -132,7 +133,6 @@ class FunctionalityHandler:
                                                 connection.oBuffer.put(f"bootstrap:cmd:auth:-1")
                                         elif cmdparts[2] == "fdn":
                                             # Client requests FDN details
-                                            global client_tokens
                                             token_found = False
                                             print()
                                             print(f"Received FDN request from: "
@@ -184,7 +184,6 @@ class FunctionalityHandler:
                                                                        str(len(auth_ms_nodes) + 1),
                                                                        None, ip, port))
                                         elif cmdparts[2] == "token":
-                                            global client_tokens
                                             print(message)
                                             status = cmdparts[3]
                                             token = cmdparts[4]
