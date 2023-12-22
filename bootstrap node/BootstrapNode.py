@@ -102,6 +102,7 @@ class FunctionalityHandler:
                     global content_nodes
                     if not connection.iBuffer.empty():
                         message = connection.iBuffer.get()
+                        global client_tokens
                         if message:
                             # Global variables
                             # Client token array
