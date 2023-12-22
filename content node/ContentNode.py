@@ -73,9 +73,12 @@ class abstractContent:
     def getNodeAddress(self):
         try:
             for interface in netifaces.interfaces():
-                for link in netifaces.ifaddresses(interface)[netifaces.AF_INET]:
-                    print(f"Node hosted on: {link['addr']}")
-                    return(link['addr'])
+                addresses = netifaces.ifaddresses(interface).get(netifaces.AF_INET, [])
+                for addr_info in addresses:
+                    ipv4_address = addr_info.get('addr', '')
+                    if ipv4_address.startswith('10.'):
+                        print(f"Content node hosted on: {ipv4_address}")
+                        return ipv4_address
         except:
             pass
 

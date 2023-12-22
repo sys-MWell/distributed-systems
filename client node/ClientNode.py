@@ -6,6 +6,7 @@ import requests
 
 nodes = []
 auth_token = ''
+downloaded_audio = []
 
 class Nodes:
     def __init__(self, nodeNumber, nodeType, ip, port):
@@ -73,7 +74,27 @@ class abstractClient:
                                         self.node_connection()
 
                                 elif cmdparts[2] == "fdn":
-                                    print("fdn")
+                                    print(f"Received token confirmation from bootstrap")
+                                    if len(nodes) >= 1:
+                                        nodeStatus = cmdparts[3]
+                                        if nodeStatus == '0':
+                                            # Connect to microservice
+                                            print(f"Received command: {message}")
+                                            nodeNumber = int(cmdparts[4])
+                                            nodeName = cmdparts[5]
+                                            nodeIP = cmdparts[6]
+                                            nodePort = cmdparts[7]
+                                            nodes.append(Nodes(nodeNumber, nodeName, nodeIP, nodePort))
+                                            self.main_menu()
+                                        else:
+                                            print("File distribution node unavailable")
+                                            print("Please try again...")
+                                            time.sleep(5)
+                                            print()
+                                            self.contextual_menu()
+                                    else:
+                                        # Error handling
+                                        self.contextual_menu()
 
                                 elif cmdparts[2] == "token":
                                     if cmdparts[3] == "-1":
@@ -151,7 +172,9 @@ class abstractClient:
             self.connection.oBuffer.put(contextOptionCommand)
 
     def main_menu(self):
-        time.sleep(4)
+        global nodes
+        print()
+        time.sleep(2)
         # Main menu for audio tool functionality
         menuOptions = input("Please select an option:\n"
                               "1 - Retrieve list of available nodes\n"
@@ -161,12 +184,15 @@ class abstractClient:
                               "5 - Play audio file\n"
                               "6 - Exit\n"
                               "Option: ")
+        print()
         if menuOptions == "1":
-            print("Retrieve list of available nodes\n")
+            print("Retrieve list of available nodes:")
+            self.print_nodes_details(nodes)
         elif menuOptions == "2":
             print("List local audio files\n")
         elif menuOptions == "3":
-            print("List remote audio files\n")
+            #print("List remote audio files")
+            self.list_fdn_files()
         elif menuOptions == "4":
             print("Download audio files\n")
         elif menuOptions == "5":
@@ -179,21 +205,57 @@ class abstractClient:
             time.sleep(4)
             self.main_menu()
 
-        # NEED TO CONNECT TO FDN
-        # If user select option 3 or 4 -> Requires bootstrap
-        # if menuOptions in ["3", "4"]:
-        #     menuOptionCmd = f"client:cmd:menu:{menuOptions}:{auth_token}"
-        # if self.connection:
-        #     self.connection.oBuffer.put(menuOptionCmd)
-        #     time.sleep(3)
-            # HAVE A WAIT UNTIL HERE FOR REPLY?
+    # Menu option 1: Display all available nodes information
+    def print_nodes_details(self, nodes_array):
+        for node in nodes_array:
+            print(
+                f"['Node number:' {node.nodeNumber}, 'Node type:' {node.nodeType},"
+                f" 'Node IP:' {node.ip}, 'Node port:' {node.port}]")
+        input("Press enter to continue...")
+        self.main_menu()
 
-            #self.main_menu()
+    # Menu option 2:
+
+    # Menu option 3:
+    def list_fdn_files(self):
+        global nodes
+        if len(nodes) > 0:
+            # Check if file distribution microservice node is saved in array
+            fd_ms_node = next((node for node in nodes if node.nodeType == "fd-ms"), None)
+            if fd_ms_node is not None:
+                ip = fd_ms_node.ip
+                port = fd_ms_node.port
+                host = f"{ip}:{port}"
+                try:
+                    print("Connecting to file distribution microservice")
+                    # Flask server connection
+                    list_audio_url = f'http://{host}/list_audio'
+
+                    # Send a GET request to obtain the list of audio files
+                    response = requests.get(list_audio_url)
+
+                    # Check if the request was successful (status code 200)
+                    if response.status_code == 200:
+                        # Retrieve the list of audio files from the JSON response
+                        audio_files = response.json().get('audio_files', [])
+
+                        if audio_files:
+                            print('List of audio files:')
+                            for file in audio_files:
+                                print(f'- {file}')
+                            input("Press enter to continue...")
+                            self.main_menu()
+                        else:
+                            print('No audio files available in the specified folder.')
+                    else:
+                        print(f'Failed to obtain the list of audio files. Status code: {response.status_code}')
+                except:
+                    print("Could not")
 
     def authentication(self, option):
         global nodes
         if len(nodes) > 0:
-            # Check if auth node is saved in array
+            # Check if auth microservice node is saved in array
             auth_ms_node = next((node for node in nodes if node.nodeType == "auth-ms"), None)
             if auth_ms_node is not None:
                 ip = auth_ms_node.ip

@@ -1,9 +1,14 @@
 # All of the processing code has now been pulled into this file - the network code remains in the other file Abstract...
+import subprocess
+import sys
 import time
 from datetime import datetime
 from FDNNetworkInterface import FDNNetworkInterface
 import threading
 import netifaces
+
+fdn_microservice_count = 0
+nodePort = 50001
 
 class abstractFDN:
     def __init__(self, host="127.0.0.1", port=50000):
@@ -24,7 +29,20 @@ class abstractFDN:
             if self.connection:
                 message = self.connection.iBuffer.get()
                 if message:
+                    print()
                     print(message)
+                    # Break message loop
+                    if message.startswith("cmd"):
+                        parts = message.split(":")
+                        if len(parts) >= 3 and parts[0] == "cmd":
+                            print(f"Command received from bootstrap")
+                            if len(parts) >= 3:
+                                after_node = parts[1]
+                                if after_node == "spwn":
+                                    after_node = parts[2]
+                                    if after_node == "ms":
+                                        print(f"Spawn micro-service command received")
+                                        self.fdnLoadBalancer(parts[1], None)
 
     def process(self):
         # Start the UI thread and start the network components
@@ -32,23 +50,58 @@ class abstractFDN:
         self.connection = self.networkHandler.start_FDN(self.host, self.port)
 
         while self.running:
-            message = "fdn"
+            global nodePort
+            message = "fdn:cmd:load:" + str(self.nodeIp) +":"+ str(nodePort)
+            nodePort ++ 1
             if self.connection:
                 self.connection.oBuffer.put(message)
                 message = input()
 
         # stop the network components and the UI thread
         self.networkHandler.quit()
-        self.uiThread.join()
 
     def getNodeAddress(self):
         try:
             for interface in netifaces.interfaces():
-                for link in netifaces.ifaddresses(interface)[netifaces.AF_INET]:
-                    print(f"Node hosted on: {link['addr']}")
-                    return(link['addr'])
+                addresses = netifaces.ifaddresses(interface).get(netifaces.AF_INET, [])
+                for addr_info in addresses:
+                    ipv4_address = addr_info.get('addr', '')
+                    if ipv4_address.startswith('10.'):
+                        print(f"Node hosted on: {ipv4_address}")
+                        return ipv4_address
         except:
             pass
+
+    def fdnLoadBalancer(self, command, extra):
+        global fdn_microservice_count
+        if command == "spwn":
+            # Spawn microservice node command
+            if fdn_microservice_count == 0:
+                time.sleep(2)
+                self.spawnMicroservice()
+
+    def spawnMicroservice(self):
+        print("Spawn fdn microservice")
+        # Start Microservice
+        try:
+            msip = self.nodeIp
+            msport = str(self.port + 2)
+            DETACHED_PROCESS = 0x00000008
+            fdn_microservice_processes = subprocess.Popen(
+                [
+                    sys.executable,
+                    "../file distribution node/FDNMicroservice.py",
+                    msip,
+                    msport
+                ],
+                creationflags=subprocess.CREATE_NEW_CONSOLE | subprocess.CREATE_NEW_PROCESS_GROUP
+            ).pid
+            message = "fdn:cmd:spwnms:" + str(msip) + ":" + str(msport)
+            if self.connection:
+                self.connection.oBuffer.put(message)
+        except:
+            pass
+
 
 class FDNFunctionalityHandler:
     def __init__(self, network):
