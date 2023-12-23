@@ -3,6 +3,7 @@ import os
 import subprocess
 import sys
 import time
+from collections import deque
 from datetime import datetime
 from AuthNetworkInterface import AuthNetworkInterface
 import threading
@@ -23,6 +24,12 @@ class abstractAuth:
         print("Authentication Node Initiated")
         # Get IP of CONTENT node
         self.nodeIp = self.getNodeAddress()
+
+        # Load balancer
+        self.load_balancer_tasks = deque()
+        self.load_balancer_lock = threading.Lock()
+        self.max_concurrent_tasks = 2
+        self.current_tasks = 0
 
     # Simple UI thread
     def ui(self):
@@ -82,6 +89,25 @@ class abstractAuth:
             pass
 
     def authLoadBalancer(self, command, extra):
+        # Append the parameters to the circular list
+        self.load_balancer_tasks.append((command, extra))
+        # Call load_balancer_exe with the parameters from the circular list
+        self.load_balancer_exe()
+
+    def load_balancer_exe(self):
+        with self.load_balancer_lock:
+            # Check if the maximum number of concurrent tasks is reached
+            if self.current_tasks >= self.max_concurrent_tasks:
+                return
+
+            if self.load_balancer_tasks:
+                command, extra = self.load_balancer_tasks.popleft()
+
+                # Execute the task in a separate thread
+                threading.Thread(target=self.execute_task, args=(command, extra)).start()
+                self.current_tasks += 1
+
+    def execute_task(self, command, extra):
         global auth_microservice_count
         if command == "spwn":
             # Spawn microservice node command

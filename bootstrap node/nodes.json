@@ -3,37 +3,13 @@
     {
       "connection_type": "content",
       "ip": "127.0.0.1",
-      "port": 62418,
+      "port": 62600,
       "status": "online"
     },
     {
       "connection_type": "auth",
       "ip": "127.0.0.1",
-      "port": 62419,
-      "status": "online"
-    },
-    {
-      "connection_type": "content",
-      "ip": "127.0.0.1",
-      "port": 62420,
-      "status": "online"
-    },
-    {
-      "connection_type": "auth-ms",
-      "ip": "10.14.0.2",
-      "port": "50002",
-      "status": "online"
-    },
-    {
-      "connection_type": "fdn",
-      "ip": "127.0.0.1",
-      "port": 62421,
-      "status": "online"
-    },
-    {
-      "connection_type": "fdn-ms",
-      "ip": "10.14.0.2",
-      "port": "50003",
+      "port": 62601,
       "status": "online"
     }
   ]
