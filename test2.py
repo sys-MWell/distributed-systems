@@ -1,2 +1,0 @@
-print("Hello WOrld")
-input()

@@ -14,7 +14,7 @@ content_nodes = []      # List to keep track of content nodes
 auth_nodes = []         # List to keep track of authentication nodes
 auth_ms_nodes = []      # List to keep track of authentication microservice nodes
 fd_nodes = []
-fd_ms_nodes = []  # List to keep track of file distribution microservice nodes
+fd_ms_nodes = []        # List to keep track of file distribution microservice nodes
 client_tokens = []      # List of connectedclient tokens
 
 
@@ -72,7 +72,6 @@ class FunctionalityHandler:
         duration = connection.time_since_last_message()
         self.ip = ip
         self.port = port
-
         # You should perform your disconnect / ping as appropriate here.
         if duration > 5:
             connection.update_time()
@@ -81,7 +80,7 @@ class FunctionalityHandler:
                 ip, port = connection.sock.getpeername()
                 # print(f"{datetime.now()} ", end="")
                 # print(
-                #     f"The last message from {ip}:{port} sent more than 15 seconds ago, "
+                #     f"The last message from {ip}:{port} sent more than 5 seconds ago, "
                 #     f"{connection.get_timeouts()} have occurred")
             except OSError as e:
                 if e.errno == 10038:  # WinError 10038: An operation was attempted on something that is not a socket
@@ -112,6 +111,12 @@ class FunctionalityHandler:
                             ip, port = connection.sock.getpeername()
                             if message.startswith("ping"):
                                 connection.oBuffer.put("pong")
+                            elif message.startswith("quit"):
+                                # Handle the error gracefully
+                                print(f"Connection closed {self.ip}:{self.port} disconnected...", end="")
+                                self.connections.remove(connection)
+                                print()
+                                exit()
                             ### CLIENT NODE
                             elif message.startswith("client"):
                                 # Split commands
@@ -361,6 +366,7 @@ class FunctionalityHandler:
                 connection.oBuffer.put(f"bootstrap:cmd:fdn:0:{ms_connection}")
             if connected_clients >= 5:
                 print("more than 5 connected clients")
+        return
 
     def read_json_file(self):
         with open('nodes.json', 'r') as file:

@@ -1,3 +1,22 @@
 {
-  "connections": []
-}
+  "connections": [
+    {
+      "connection_type": "content",
+      "ip": "127.0.0.1",
+      "port": 57135,
+      "status": "online"
+    },
+    {
+      "connection_type": "content",
+      "ip": "127.0.0.1",
+      "port": 57134,
+      "status": "online"
+    },
+    {
+      "connection_type": "fdn",
+      "ip": "127.0.0.1",
+      "port": 57137,
+      "status": "online"
+    }
+  ]
+}}

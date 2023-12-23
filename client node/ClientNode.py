@@ -137,14 +137,15 @@ class abstractClient:
         # Exit returns back here
 
         # Continue running client process, always ready to accept and send messages
-        # while self.running:
-        #     pass
-        #     if self.connection:
-        #         pass
-        #     else:
-        #         self.running = False
+        while self.running:
+            pass
+            if self.connection:
+                pass
+            else:
+                self.running = False
 
         # stop the network components and the UI thread
+        self.connection.oBuffer.put("quit")
         self.networkHandler.quit()
         self.exit_flag.set()
         sys.exit(0)
@@ -164,9 +165,9 @@ class abstractClient:
             self.context_status = 2
         elif contextOption == "3":
             self.exit()
+            return
         else:
             print("Invalid option selected\n")
-            time.sleep(1)
             self.contextual_menu()
         contextOptionCommand = "client:cmd:context:"+contextOption
         if self.connection:
@@ -491,6 +492,7 @@ class abstractClient:
     # Client application close
     def exit(self):
         print("Exit selected")
+        self.running = False
         return
 
 if __name__ == "__main__":
