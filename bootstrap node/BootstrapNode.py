@@ -74,7 +74,7 @@ class FunctionalityHandler:
         self.port = port
 
         # You should perform your disconnect / ping as appropriate here.
-        if duration > 15:
+        if duration > 5:
             connection.update_time()
             connection.add_timeout()
             try:
@@ -122,7 +122,7 @@ class FunctionalityHandler:
                                         if cmdparts[2] == "context":
                                             # Context menu selection
                                             print(f"Received contextual menu input from: "
-                                                  f"{ip}:{port} message being {message} ", end="")
+                                                  f"{ip}:{port} message being {message} \n", end="")
                                             command_value = cmdparts[3]
                                             if command_value == '1' or command_value == '2':
                                                 # Append to client count
@@ -131,7 +131,7 @@ class FunctionalityHandler:
                                                 # Client requires authentication node
                                                 if len(auth_ms_nodes) < 1:
                                                     # No auth microservices available
-                                                    # Get bootstrap to spawn one idk
+                                                    # Get bootstrap to spawn one
                                                     connection.oBuffer.put(f"bootstrap:cmd:auth:-1")
                                                 elif len(auth_ms_nodes) >= 1:
                                                     # Auth microservice available
@@ -342,7 +342,7 @@ class FunctionalityHandler:
         elif command == "authentication":
             # Send command to client with authentication microservice ip and port
             print("auth")
-            print(connected_clients)
+            #print(connected_clients)
             if connected_clients < 5:
                 microservice = auth_ms_nodes[0]
                 name = "auth-ms"
