@@ -125,6 +125,16 @@ class abstractAuth:
                 tokenReply = f"auth:cmd:token:-1"
             self.connection.oBuffer.put(tokenReply)
 
+        # Introduce a delay between tasks (adjust the sleep duration as needed)
+        time.sleep(1)
+
+        with self.load_balancer_lock:
+            self.current_tasks -= 1
+
+        # Continue with the next task
+        self.load_balancer_exe()
+        return
+
     def find_token_in_file(self, token_to_find):
         # If authentication node has client token savedS
         try:
