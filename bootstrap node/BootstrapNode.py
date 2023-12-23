@@ -393,6 +393,15 @@ class FunctionalityHandler:
             if connected_clients >= 5:
                 print("more than 5 connected clients")
         print("Bootstrap Task Ended")
+
+        # Introduce a delay between tasks (adjust the sleep duration as needed)
+        time.sleep(1)
+
+        with self.load_balancer_lock:
+            self.current_tasks -= 1
+
+        # Continue with the next task
+        self.load_balancer_exe()
         return
 
     def read_json_file(self):
