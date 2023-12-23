@@ -3,19 +3,19 @@
     {
       "connection_type": "content",
       "ip": "127.0.0.1",
-      "port": 62281,
-      "status": "online"
-    },
-    {
-      "connection_type": "content",
-      "ip": "127.0.0.1",
-      "port": 62280,
+      "port": 62418,
       "status": "online"
     },
     {
       "connection_type": "auth",
       "ip": "127.0.0.1",
-      "port": 62282,
+      "port": 62419,
+      "status": "online"
+    },
+    {
+      "connection_type": "content",
+      "ip": "127.0.0.1",
+      "port": 62420,
       "status": "online"
     },
     {
@@ -27,7 +27,7 @@
     {
       "connection_type": "fdn",
       "ip": "127.0.0.1",
-      "port": 62283,
+      "port": 62421,
       "status": "online"
     },
     {
