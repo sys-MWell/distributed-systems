@@ -1,3 +1,4 @@
+from collections import deque
 from ServerNetworkInterface import ServerNetworkInterface
 import time
 from datetime import datetime
@@ -61,6 +62,11 @@ class FunctionalityHandler:
         self.connections = []
         # What user main menu inputted
         self.clientConnection = None
+        # Load balancer requirements
+        self.load_balancer_tasks = deque()
+        self.load_balancer_lock = threading.Lock()
+        self.max_concurrent_tasks = 3
+        self.current_tasks = 0
 
     # Add new client connection - new thread for every client
     def add(self, connection, ip, port):
@@ -275,11 +281,11 @@ class FunctionalityHandler:
                                     print("3")
                             else:
                                 connection.oBuffer.put(f"Echoing: {message}")
-
                 except ConnectionResetError:
                     # Handle client node disconnect gracefully
                     self.connections.remove(connection)
                     break
+        # Quit network functionality if running false
         self.network.quit()
 
     def handle_functional_nodes(self, connection, name, ip, port):
@@ -291,6 +297,26 @@ class FunctionalityHandler:
         print()
 
     def load_balancer(self, command, connection, ip, port, extra):
+        # Append the parameters to the circular list
+        self.load_balancer_tasks.append((command, connection, ip, port, extra))
+
+        # Call load_balancer_exe with the parameters from the circular list
+        self.load_balancer_exe()
+
+    def load_balancer_exe(self):
+        with self.load_balancer_lock:
+            # Check if the maximum number of concurrent tasks is reached
+            if self.current_tasks >= self.max_concurrent_tasks:
+                return
+
+            if self.load_balancer_tasks:
+                command, connection, ip, port, extra = self.load_balancer_tasks.popleft()
+
+                # Execute the task in a separate thread
+                threading.Thread(target=self.execute_task, args=(command, connection, ip, port, extra)).start()
+                self.current_tasks += 1
+
+    def execute_task(self, command, connection, ip, port, extra):
         global content_node
         global content_nodes
         global connected_clients
@@ -366,6 +392,7 @@ class FunctionalityHandler:
                 connection.oBuffer.put(f"bootstrap:cmd:fdn:0:{ms_connection}")
             if connected_clients >= 5:
                 print("more than 5 connected clients")
+        print("Bootstrap Task Ended")
         return
 
     def read_json_file(self):

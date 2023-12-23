@@ -2,13 +2,13 @@
 import hashlib
 import os
 import sys
-
 import pygame
 import time
 from ClientNetworkInterface import ClientNetworkInterface
 import threading
 import requests
 from urllib.parse import unquote  # Use unquote to handle URL-encoded filenames
+from tqdm import tqdm  # Import tqdm for the progress bar
 
 nodes = []
 auth_token = ''
@@ -285,79 +285,74 @@ class abstractClient:
                 host = f"{ip}:{port}"
                 try:
                     file = input(f"Enter filename to download: ")
+                    filename = file
                     media_download_url = f'http://{host}/download_media/{file}'
 
-                    # Send a GET request to download the media file as bytes
-                    response = requests.get(media_download_url)
+                    # Send a GET request to download the media file as bytes with progress bar
+                    with requests.get(media_download_url, stream=True) as response:
+                        # Check if the request was successful (status code 200)
+                        if response.status_code == 200:
+                            # Get total file size from the Content-Length header
+                            total_size = int(response.headers.get('Content-Length', 0))
 
-                    # Check if the request was successful (status code 200)
-                    if response.status_code == 200:
-                        # Retrieve the downloaded file data, the Content-MD5 header, and the Content-Disposition header
-                        file_data = response.content
-                        md5_checksum_header = response.headers.get('Content-MD5')
-                        content_disposition_header = response.headers.get('Content-Disposition')
+                            # Get the Content-MD5 header for MD5 checksum verification
+                            md5_checksum_header = response.headers.get('Content-MD5')
 
-                        # Calculate MD5 checksum for the downloaded file
-                        calculated_md5_checksum = hashlib.md5(file_data).hexdigest()
+                            # Initialize tqdm with the total size
+                            with tqdm(total=total_size, unit='B', unit_scale=True, desc='Downloading') as pbar:
+                                # Create a path to the "audio" folder within the current directory
+                                audio_folder_path = os.path.join(os.path.dirname(__file__), "audio")
 
-                        # Verify MD5 checksum
-                        if md5_checksum_header and md5_checksum_header == calculated_md5_checksum:
-                            # Extract the suggested filename from the Content-Disposition header
-                            suggested_filename = None
-                            if content_disposition_header:
-                                _, params = content_disposition_header.split(';', 1)
-                                for param in params.split(';'):
-                                    key, value = param.strip().split('=', 1)
-                                    if key.lower() == 'filename':
-                                        suggested_filename = unquote(value.strip('\"'))
+                                # Ensure the "audio" folder exists, create it if not
+                                if not os.path.exists(audio_folder_path):
+                                    os.makedirs(audio_folder_path)
 
-                            # Use the suggested filename or a default name if not provided
-                            suggested_filename = suggested_filename or 'downloaded_media'
+                                # Construct the full path including the "audio" folder
+                                download_filename = os.path.join(audio_folder_path, file)
 
-                            # Create a path to the "audio" folder within the current directory
-                            audio_folder_path = os.path.join(os.path.dirname(__file__), "audio")
+                                # Open a file to write the downloaded content
+                                with open(download_filename, 'wb') as file:
+                                    for chunk in response.iter_content(chunk_size=1024):
+                                        file.write(chunk)  # Write the chunk directly to the file
+                                        pbar.update(len(chunk))  # Update progress bar
 
-                            # Ensure the "audio" folder exists, create it if not
-                            if not os.path.exists(audio_folder_path):
-                                os.makedirs(audio_folder_path)
+                            # Calculate MD5 checksum for the downloaded file
+                            calculated_md5_checksum = hashlib.md5(open(download_filename, 'rb').read()).hexdigest()
 
-                            # Construct the full path including the "audio" folder
-                            download_filename = os.path.join(audio_folder_path, suggested_filename)
-
-                            # Save the downloaded file with the suggested filename
-                            with open(download_filename, 'wb') as file:
-                                file.write(file_data)
-
-                            print(f'Media file downloaded successfully as {suggested_filename}.')
-                            time.sleep(2)
-                            audio_folder_path = os.path.join(os.path.dirname(__file__), "audio")
-                            print(f'Playing media file: {suggested_filename}.')
-                            file_path = os.path.join(audio_folder_path, suggested_filename)
-                            self.play_audio_file(file_path)
-                            while True:
-                                user_input = input("Enter 'p' to pause, 'r' to resume, or 'q' to quit: ").lower()
-
-                                if user_input == 'p':
-                                    pygame.mixer.music.pause()
-                                    print("Paused.")
-                                elif user_input == 'r':
-                                    pygame.mixer.music.unpause()
-                                    print("Resumed.")
-                                elif user_input == 'q':
-                                    pygame.mixer.music.stop()
-                                    print("Quitting.")
-                                    break
-                                else:
-                                    print("Invalid input. Please enter 'p', 'r', or 'q'.")
-                            input("Press enter to continue...")
+                            # Verify MD5 checksum
+                            if md5_checksum_header and md5_checksum_header == calculated_md5_checksum:
+                                print(f'Media file downloaded successfully as {filename}.')
+                                time.sleep(1)
+                                # Create a path to the "audio" folder within the current directory
+                                audio_folder_path = os.path.join(os.path.dirname(__file__), "audio")
+                                print(f'Playing media file: {filename}.')
+                                file_path = os.path.join(audio_folder_path, filename)
+                                self.play_audio_file(file_path)
+                                while True:
+                                    user_input = input("Enter 'p' to pause, 'r' to resume, or 'q' to quit: ").lower()
+                                    if user_input == 'p':
+                                        pygame.mixer.music.pause()
+                                        print("Paused.")
+                                    elif user_input == 'r':
+                                        pygame.mixer.music.unpause()
+                                        print("Resumed.")
+                                    elif user_input == 'q':
+                                        pygame.mixer.music.stop()
+                                        print("Quitting.")
+                                        break
+                                    else:
+                                        print("Invalid input. Please enter 'p', 'r', or 'q'.")
+                                input("Press enter to continue...")
+                            else:
+                                print('Failed to verify MD5 checksum. File may be corrupted.')
                         else:
-                            print('Failed to verify MD5 checksum. File may be corrupted.')
-                    else:
-                        print(f'Failed to download media file. Status code: {response.status_code}')
+                            print(f'Failed to download media file. Status code: {response.status_code}')
                     self.main_menu()
                 except Exception as e:
                     print(f"Exception occurred: {e}")
                     self.main_menu()
+            else:
+                print("Node unavailable")
         else:
             print("Node unavailable")
 
