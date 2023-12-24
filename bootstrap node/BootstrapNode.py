@@ -220,7 +220,7 @@ class FunctionalityHandler:
                                                 # Client requires file distribution microservice node
                                                 if len(fd_ms_nodes) < 1:
                                                     # No file distribution microservices available
-                                                    connection.oBuffer.put(f"bootstrap:cmd:auth:-1")
+                                                    self.clientConnection.oBuffer.put(f"bootstrap:cmd:fdn:-1")
                                                 elif len(fd_ms_nodes) >= 1:
                                                     # File distribution microservice available
                                                     self.load_balancer("filedistribution",
@@ -385,11 +385,15 @@ class FunctionalityHandler:
         ### Send filedistribution microservice to client
         elif command == "filedistribution":
             if connected_clients < 5:
-                print("less than 5 connected clients")
-                microservice = fd_ms_nodes[0]
-                name = "fd-ms"
-                ms_connection = f"{microservice.nodeNumber}:{name}:{microservice.ip}:{microservice.port}"
-                connection.oBuffer.put(f"bootstrap:cmd:fdn:0:{ms_connection}")
+                try:
+                    print("less than 5 connected clients")
+                    microservice = fd_ms_nodes[0]
+                    name = "fd-ms"
+                    ms_connection = f"{microservice.nodeNumber}:{name}:{microservice.ip}:{microservice.port}"
+                    connection.oBuffer.put(f"bootstrap:cmd:fdn:0:{ms_connection}")
+                except:
+                    print("No FDN available")
+                    connection.oBuffer.put(f"bootstrap:cmd:fdn:-1")
             if connected_clients >= 5:
                 print("more than 5 connected clients")
         print("Bootstrap Task Ended")

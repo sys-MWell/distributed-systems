@@ -80,7 +80,6 @@ class abstractClient:
                                         else:
                                             # Node already exists
                                             self.node_connection()
-
                                     elif cmdparts[2] == "fdn":
                                         print(f"Received token confirmation from bootstrap")
                                         if len(nodes) >= 1:
@@ -101,7 +100,10 @@ class abstractClient:
                                                 print()
                                                 self.contextual_menu()
                                         else:
-                                            # Error handling
+                                            print("File distribution node unavailable")
+                                            print("Please try again...")
+                                            time.sleep(5)
+                                            print()
                                             self.contextual_menu()
 
                                     elif cmdparts[2] == "token":
