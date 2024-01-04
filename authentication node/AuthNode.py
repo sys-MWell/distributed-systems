@@ -11,7 +11,9 @@ import netifaces
 
 auth_microservice_count = 0
 
+# For use in labs, needs to be between ports 50000 - 50010
 nodePort = 50001
+
 
 class abstractAuth:
     def __init__(self, host="127.0.0.1", port=50001):
@@ -77,16 +79,14 @@ class abstractAuth:
         self.uiThread.join()
 
     def getNodeAddress(self):
-        try:
-            for interface in netifaces.interfaces():
-                addresses = netifaces.ifaddresses(interface).get(netifaces.AF_INET, [])
-                for addr_info in addresses:
-                    ipv4_address = addr_info.get('addr', '')
-                    if ipv4_address.startswith('10.'):
-                        print(f"Node hosted on: {ipv4_address}")
-                        return ipv4_address
-        except:
-            pass
+        for interface in netifaces.interfaces():
+            addresses = netifaces.ifaddresses(interface).get(netifaces.AF_INET, [])
+            for addr_info in addresses:
+                ipv4_address = addr_info.get('addr', '')
+                # CHANGE TO 10. FOR LABS!!!!!!!!
+                if ipv4_address.startswith('192.'):
+                    print(f"Node hosted on: {ipv4_address}")
+                    return ipv4_address
 
     def authLoadBalancer(self, command, extra):
         # Append the parameters to the circular list
@@ -208,5 +208,6 @@ class AuthFunctionalityHandler:
 
 if __name__ == "__main__":
     # Hardcoded bootstrap prime node - ip, port - CHANGE IP TO BOOSTRAP IP
-    auth = abstractAuth("127.0.0.1", 50001)
+    #auth = abstractAuth("127.0.0.1", 50001)
+    auth = abstractAuth("192.168.1.232", 50001)
     auth.process()

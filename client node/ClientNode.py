@@ -227,7 +227,8 @@ class abstractClient:
 
         if not audio_files:
             print("No audio files found in the 'audio' folder.")
-            return
+            input("Press enter to continue...")
+            self.main_menu()
 
         print("Available audio files:")
         for i, audio_file in enumerate(audio_files):
@@ -494,5 +495,5 @@ class abstractClient:
 
 if __name__ == "__main__":
     # Hardcoded bootstrap prime node - ip, port - CHANGE IP TO BOOSTRAP IP
-    client = abstractClient("127.0.0.1", 50001)
+    client = abstractClient("192.168.1.232", 50001)
     client.process()

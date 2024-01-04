@@ -123,5 +123,5 @@ class ContentFunctionalityHandler:
 
 if __name__ == "__main__":
     # Hardcoded bootstrap prime node - ip, port - CHANGE IP TO BOOSTRAP IP
-    content = abstractContent("127.0.0.1", 50001)
+    content = abstractContent("192.168.1.232", 50001)
     content.process()

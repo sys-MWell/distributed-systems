@@ -98,6 +98,7 @@ class FunctionalityHandler:
 
     def process(self, ip, port, connection=None):
         while self.running:
+            global connected_clients
             if connection:
                 #                Heartbeat update
                 # ------------------------------------------------
@@ -119,6 +120,7 @@ class FunctionalityHandler:
                                 connection.oBuffer.put("pong")
                             elif message.startswith("quit"):
                                 # Handle the error gracefully
+                                connected_clients -= 1
                                 print(f"Connection closed {self.ip}:{self.port} disconnected...", end="")
                                 self.connections.remove(connection)
                                 print()
@@ -137,8 +139,7 @@ class FunctionalityHandler:
                                             command_value = cmdparts[3]
                                             if command_value == '1' or command_value == '2':
                                                 # Append to client count
-                                                global connected_clients
-                                                #connected_clients += 1
+                                                connected_clients += 1
                                                 # Client requires authentication node
                                                 if len(auth_ms_nodes) < 1:
                                                     # No auth microservices available
@@ -221,6 +222,12 @@ class FunctionalityHandler:
                                                 if len(fd_ms_nodes) < 1:
                                                     # No file distribution microservices available
                                                     self.clientConnection.oBuffer.put(f"bootstrap:cmd:fdn:-1")
+                                                    # If one content node exists, spawn fdn from that content node
+                                                    if len(content_nodes) == 1:
+                                                        node = content_nodes[0]
+                                                        self.load_balancer("content", node.connection,
+                                                                           ip, port, None)
+
                                                 elif len(fd_ms_nodes) >= 1:
                                                     # File distribution microservice available
                                                     self.load_balancer("filedistribution",
@@ -374,17 +381,17 @@ class FunctionalityHandler:
             # Send command to client with authentication microservice ip and port
             print("auth")
             #print(connected_clients)
-            if connected_clients < 5:
+            if connected_clients < 10:
                 microservice = auth_ms_nodes[0]
                 name = "auth-ms"
                 ms_connection = f"{microservice.nodeNumber}:{name}:{microservice.ip}:{microservice.port}"
                 connection.oBuffer.put(f"bootstrap:cmd:auth:0:{ms_connection}")
-            if connected_clients >= 5:
+            if connected_clients >= 10:
                 print("more than 5 connected clients")
 
         ### Send filedistribution microservice to client
         elif command == "filedistribution":
-            if connected_clients < 5:
+            if connected_clients < 10:
                 try:
                     print("less than 5 connected clients")
                     microservice = fd_ms_nodes[0]
@@ -394,7 +401,7 @@ class FunctionalityHandler:
                 except:
                     print("No FDN available")
                     connection.oBuffer.put(f"bootstrap:cmd:fdn:-1")
-            if connected_clients >= 5:
+            if connected_clients >= 10:
                 print("more than 5 connected clients")
         print("Bootstrap Task Ended")
 
@@ -450,5 +457,6 @@ class AbstractServer:
 
 if __name__ == "__main__":
     # Hardcoded bootstrap prime node - ip, port - CHANGE IP TO BOOSTRAP IP
-    server = AbstractServer("127.0.0.1", 50001)
+    #server = AbstractServer("127.0.0.1", 50001)
+    server = AbstractServer("192.168.1.232", 50001)
     server.process()

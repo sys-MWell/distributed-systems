@@ -9,6 +9,7 @@ import threading
 import netifaces
 
 fdn_microservice_count = 0
+# For use in labs, needs to be between ports 50000 - 50010
 nodePort = 50001
 
 class abstractFDN:
@@ -73,7 +74,8 @@ class abstractFDN:
                 addresses = netifaces.ifaddresses(interface).get(netifaces.AF_INET, [])
                 for addr_info in addresses:
                     ipv4_address = addr_info.get('addr', '')
-                    if ipv4_address.startswith('10.'):
+                    # CHANGE TO 10. FOR LABS!!!!!!!!
+                    if ipv4_address.startswith('192.'):
                         print(f"Node hosted on: {ipv4_address}")
                         return ipv4_address
         except:
@@ -171,5 +173,5 @@ class FDNFunctionalityHandler:
 
 if __name__ == "__main__":
     # Hardcoded bootstrap prime node - ip, port - CHANGE IP TO BOOSTRAP IP
-    FDN = abstractFDN("127.0.0.1", 50001)
+    FDN = abstractFDN("192.168.1.232", 50001)
     FDN.process()

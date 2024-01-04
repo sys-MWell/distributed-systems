@@ -1,2 +1,5 @@
 Username: hello, Password: goodbye, Token: c8571613-a1ff-4e7c-82c5-333bf4e33a88
 Username: john, Password: smith, Token: be954cb8-5170-4192-864c-6e891961770b
+Username: michael, Password: scott, Token: ed2142ac-b8cb-4c46-a130-0263fe226378
+Username: adam, Password: sandler, Token: 148c93af-6f20-4a6f-8b34-cbb614bbc2e3
+Username: dave, Password: 123, Token: 68493008-1596-48ed-b96d-98829ff67fe2
