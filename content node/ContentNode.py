@@ -5,9 +5,11 @@ from ContentNetworkInterface import ContentNetworkInterface
 import threading
 import sys
 import subprocess
-import netifaces
+import os, re
+import socket
 
 nodePort = 50000
+
 
 class abstractContent:
     def __init__(self, host="127.0.0.1", port=50000):
@@ -20,6 +22,7 @@ class abstractContent:
 
         # Get IP of CONTENT node
         self.nodeIp = self.getNodeAddress()
+        print(f"Content Node hosted on: {self.nodeIp}")
 
     # Simple UI thread
     def ui(self):
@@ -38,7 +41,9 @@ class abstractContent:
                             if len(parts) >= 3:
                                 after_node = parts[2]
                                 print(f"Extracted node type: {after_node}")
+                                # Spawn detached processes as separate console
                                 if after_node == "auth":
+                                    # Authentication
                                     print("Spawning authentication node")
                                     DETACHED_PROCESS = 0x00000008
                                     pid = subprocess.Popen([sys.executable, "../authentication node/AuthNode.py"],
@@ -46,6 +51,7 @@ class abstractContent:
                                                                          subprocess.CREATE_NEW_PROCESS_GROUP).pid
 
                                 if after_node == "fdn":
+                                    # File distribution
                                     print("Spawning file distribution node")
                                     DETACHED_PROCESS = 0x00000008
                                     pid = subprocess.Popen([sys.executable, "../file distribution node/FDNNode.py"],
@@ -63,24 +69,40 @@ class abstractContent:
         self.connection = self.networkHandler.start_content(self.host, self.port)
 
         while self.running:
-            message = "content:cmd:spawn:" + str(self.nodeIp) +":"+ str(self.port)
+            # Send message to bootstrap that content node has been spawned.
+            message = "content:cmd:spawn:" + str(self.nodeIp) + ":" + str(self.port)
             if self.connection:
                 self.connection.oBuffer.put(message)
                 message = input()
 
         self.networkHandler.quit()
         self.uiThread.join()
+
     def getNodeAddress(self):
         try:
-            for interface in netifaces.interfaces():
-                addresses = netifaces.ifaddresses(interface).get(netifaces.AF_INET, [])
-                for addr_info in addresses:
-                    ipv4_address = addr_info.get('addr', '')
-                    if ipv4_address.startswith('10.'):
-                        print(f"Content node hosted on: {ipv4_address}")
-                        return ipv4_address
+            # Get local IP - needs IP starting with 10.x.x.x
+            # Should return a list of all IP addresses - find one that starts 10. and isn't ended with .0 or .254
+            addresses = os.popen(
+                'IPCONFIG | FINDSTR /R "Ethernet adapter Local Area Connection .* Address.*[0-9][0-9]*\.[0-9]['
+                '0-9]*\.[0-9][0-9]*\.[0-9][0-9]*"')
+            ip_list = re.findall(r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b', addresses.read())
+
+            # Filter and sort the IP addresses
+            filtered_ips = [ip for ip in ip_list if
+                            ip.startswith('10.') and not ip.endswith('.0') and not ip.endswith('.254')]
+
+            if filtered_ips:
+                # Return host
+                return filtered_ips[0]
+            else:
+                # Return local host
+                host_name = socket.gethostname()
+                # Get the local IP address by resolving the host name
+                local_ip = socket.gethostbyname(host_name)
+                return local_ip
         except:
             pass
+
 
 class ContentFunctionalityHandler:
     def __init__(self, network):
@@ -108,20 +130,11 @@ class ContentFunctionalityHandler:
     def process(self, connection=None):
         while self.running:
             if connection:
-                #                Heartbeat update
-                # ------------------------------------------------
-                self.update_heartbeat(connection)
-
-                if not connection.iBuffer.empty():
-                    message = connection.iBuffer.get()
-                    if message:
-                        if message.startswith("ping"):
-                            connection.oBuffer.put("pong")
-                        else:
-                            connection.oBuffer.put(f"Echoing: {message}")
+                pass
         self.network.quit()
+
 
 if __name__ == "__main__":
     # Hardcoded bootstrap prime node - ip, port - CHANGE IP TO BOOSTRAP IP
-    content = abstractContent("192.168.1.232", 50001)
+    content = abstractContent("127.0.0.1", 50001)
     content.process()

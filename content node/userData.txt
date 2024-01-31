@@ -1,6 +1,0 @@
-Username: first, Password: second, Token: 70037457-b035-49fb-9620-641cf8e1a742
-Username: usertest, Password: pass1, Token: 16fde578-362e-47c3-bc04-d45e068b29b1
-Username: test, Password: good, Token: 6f0aa125-c934-49b4-8122-c783e97b05ec
-Username: test, Password: pass, Token: 3515757f-a1ed-4fd5-b937-486f492763cc
-Username: usertest, Password: pass1, Token: 86935a1d-c74f-477c-99dc-1c702b571558
-Username: usertest, Password: pass1, Token: 4f0f55c0-618d-43fc-9404-cab9347c26f9

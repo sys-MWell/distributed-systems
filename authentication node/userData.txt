@@ -3,3 +3,9 @@ Username: john, Password: smith, Token: be954cb8-5170-4192-864c-6e891961770b
 Username: michael, Password: scott, Token: ed2142ac-b8cb-4c46-a130-0263fe226378
 Username: adam, Password: sandler, Token: 148c93af-6f20-4a6f-8b34-cbb614bbc2e3
 Username: dave, Password: 123, Token: 68493008-1596-48ed-b96d-98829ff67fe2
+Username: adam, Password: thewoo, Token: c6a05659-0452-4e6f-985d-001d3db7b547
+Username: justin, Password: 1, Token: 49183a4c-b450-42e4-9759-53fdcd64c5f8
+Username: david, Password: smith, Token: ef613165-c760-4042-9e02-36ea4a60418f
+Username: david, Password: 3, Token: 62e67951-b1d1-4b8a-84d1-296c2a94c7ec
+Username: testnew, Password: 12, Token: 86a5127e-62fd-45af-9d0e-2d940d31aeaf
+Username: adam, Password: watch, Token: edfa5cc7-f75b-4671-aff8-d2f551bea10b

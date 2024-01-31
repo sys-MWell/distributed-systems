@@ -74,7 +74,7 @@ class abstractClient:
                                             else:
                                                 print("Authentication node unavailable")
                                                 print("Please try again...")
-                                                time.sleep(5)
+                                                time.sleep(1)
                                                 print()
                                                 self.contextual_menu()
                                         else:
@@ -96,13 +96,13 @@ class abstractClient:
                                             else:
                                                 print("File distribution node unavailable")
                                                 print("Please try again...")
-                                                time.sleep(5)
+                                                time.sleep(1)
                                                 print()
                                                 self.contextual_menu()
                                         else:
                                             print("File distribution node unavailable")
                                             print("Please try again...")
-                                            time.sleep(5)
+                                            time.sleep(1)
                                             print()
                                             self.contextual_menu()
 
@@ -110,7 +110,7 @@ class abstractClient:
                                         if cmdparts[3] == "-1":
                                             print("Token unavailable/invalid, connection failure")
                                             print("Please try again...")
-                                            time.sleep(5)
+                                            time.sleep(1)
                                             self.contextual_menu()
 
                                     else:
@@ -128,13 +128,15 @@ class abstractClient:
         else:
             # Error
             print("An internal error has occurred")
-            time.sleep(5)
+            time.sleep(1)
             self.contextual_menu()
 
     def process(self):
         # Start the UI thread and start the network components
         self.uiThread.start()
         self.connection = self.networkHandler.start_client(self.host, self.port)
+        start_command = "client:cmd:spwn"
+        self.connection.oBuffer.put(start_command)
         self.contextual_menu()
         # Exit returns back here
 
@@ -153,7 +155,7 @@ class abstractClient:
         sys.exit(0)
 
     def contextual_menu(self):
-        time.sleep(4)
+        time.sleep(1)
         contextOption = input("Please select an option:\n"
                                 "1 - Login\n"
                                 "2 - Signup\n"
@@ -178,7 +180,7 @@ class abstractClient:
     def main_menu(self):
         global nodes
         print()
-        time.sleep(2)
+        time.sleep(1)
         # Main menu for audio tool functionality
         menuOptions = input("Please select an option:\n"
                               "1 - Retrieve list of available nodes\n"
@@ -204,7 +206,7 @@ class abstractClient:
         else:
             print("Invalid input selected\n")
             print()
-            time.sleep(4)
+            time.sleep(1)
             self.main_menu()
 
     # Menu option 1: Display all available nodes information
@@ -300,6 +302,7 @@ class abstractClient:
 
                             # Get the Content-MD5 header for MD5 checksum verification
                             md5_checksum_header = response.headers.get('Content-MD5')
+                            print(f"Retrieved MD5 checksum: {md5_checksum_header}")
 
                             # Initialize tqdm with the total size
                             with tqdm(total=total_size, unit='B', unit_scale=True, desc='Downloading') as pbar:
@@ -321,9 +324,11 @@ class abstractClient:
 
                             # Calculate MD5 checksum for the downloaded file
                             calculated_md5_checksum = hashlib.md5(open(download_filename, 'rb').read()).hexdigest()
+                            print(f"Downloaded file checksum: {calculated_md5_checksum}")
 
                             # Verify MD5 checksum
                             if md5_checksum_header and md5_checksum_header == calculated_md5_checksum:
+                                print(f"Calculated checksum matches retrieved checksum")
                                 print(f'Media file downloaded successfully as {filename}.')
                                 time.sleep(1)
                                 # Create a path to the "audio" folder within the current directory
@@ -444,13 +449,13 @@ class abstractClient:
                     except requests.Timeout:
                         # Error timeout
                         print("Request timed out. Connection to AuthMicroservice aborted.")
-                        time.sleep(5)
+                        time.sleep(1)
                         print()
                         self.contextual_menu()
                     except requests.RequestException as ex:
                         # Error exception
                         print(f"Request failed. Error: {ex}")
-                        time.sleep(5)
+                        time.sleep(1)
                         print()
                         self.contextual_menu()
                     else:
@@ -462,28 +467,33 @@ class abstractClient:
                             auth_token = token.replace('Token: ', '')
                             print(f"Received authentication token: {auth_token}")
                             print()
-                            # Get FDN details as login/signup successful
-                            fdnRqstCmd = f"client:cmd:fdn:{auth_token}"
-                            if self.connection:
-                                self.connection.oBuffer.put(fdnRqstCmd)
-                                time.sleep(3)
+                            # Check if auth microservice node is saved in array
+                            auth_ms_node = next((node for node in nodes if node.nodeType == "auth-ms"), None)
+                            if auth_ms_node is not None:
+                                auth_ms_ip = auth_ms_node.ip
+                                auth_ms_port = auth_ms_node.port
+                                # Get FDN details as login/signup successful
+                                fdnRqstCmd = f"client:cmd:fdn:{auth_token}:{auth_ms_ip}:{auth_ms_port}"
+                                if self.connection:
+                                    self.connection.oBuffer.put(fdnRqstCmd)
+                                    time.sleep(3)
                             #self.main_menu()
                         else:
                             # Error code
                             print(f"Failed to retrieve authentication token. Status code: {response.status_code}")
-                            time.sleep(5)
+                            time.sleep(1)
                             print()
                             self.contextual_menu()
 
                 except Exception as ex:
                     # Error login/signup, failed details
                     print("Login failed, invalid details entered. Please try again.")
-                    time.sleep(5)
+                    time.sleep(1)
                     print()
                     self.contextual_menu()
             else:
                 print(f"An error has occurred")
-                time.sleep(5)
+                time.sleep(1)
                 print()
                 self.contextual_menu()
 
@@ -495,5 +505,5 @@ class abstractClient:
 
 if __name__ == "__main__":
     # Hardcoded bootstrap prime node - ip, port - CHANGE IP TO BOOSTRAP IP
-    client = abstractClient("192.168.1.232", 50001)
+    client = abstractClient("127.0.0.1", 50001)
     client.process()

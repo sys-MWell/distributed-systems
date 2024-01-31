@@ -14,12 +14,6 @@ def download_media(filename):
     file_location = f"./audio/{filename}"
     media_file = os.path.join(script_dir, file_location)
 
-    '''
-    MAYBE HERE ADD VALIDATION FOR TOKEN 
-    LIKE LINK COULD BE /download_media/<filename>/<token> something like this
-    SOME WAY TO CONTACT AUTH NODE TO CONFIRM VALIDATION
-    '''
-
     # Check if the file exists
     if not os.path.exists(media_file):
         return "File not found", 404
@@ -30,6 +24,7 @@ def download_media(filename):
         # Read and update hash string value in blocks of 4K
         for byte_block in iter(lambda: file.read(4096), b""):
             md5.update(byte_block)
+    print(f"MD5 checksum: {md5.hexdigest()}")
 
     # Create a Flask response for streaming the file
     response = make_response(send_file(
