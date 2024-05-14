@@ -218,13 +218,20 @@ class FunctionalityHandler:
                     self.terminate_countdown_flag_auth = False
                 elif node_type == 'fdn':
                     self.terminate_countdown_flag_fdn = False
-                return
             else:
                 # Countdown aborted clients connected
                 print(f"Terminate countdown aborted: {node_ms.ip}:{node_ms.port}")
+                if node_type == 'auth':
+                    self.terminate_countdown_flag_auth = False
+                elif node_type == 'fdn':
+                    self.terminate_countdown_flag_fdn = False
         else:
             # Countdown aborted clients connected
             print(f"Terminate countdown aborted: {node_ms.ip}:{node_ms.port}")
+            if node_type == 'auth':
+                self.terminate_countdown_flag_auth = False
+            elif node_type == 'fdn':
+                self.terminate_countdown_flag_fdn = False
 
     def update_heartbeat(self, connection, ip, port):
         duration = connection.time_since_last_message()
