@@ -45,7 +45,7 @@ The project directory is structured as follows:
 ### Instructions
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/yourusername/distributed-audio-playback.git
+   git clone https://github.com/sys-MWell/distributed-systems.git
    cd distributed-audio-playback
 2. **Start bootstrap node**:
    On the machine designated to run the bootstrap node, execute:
