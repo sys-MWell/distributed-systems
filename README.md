@@ -48,11 +48,14 @@ The project directory is structured as follows: <br>
    cd distributed-audio-playback
 2. **Start bootstrap node**:
    On the machine designated to run the bootstrap node, execute:
-   ```python BootstrapNode.py```
+   ```bash
+   python BootstrapNode.py
 3. **Start Content Nodes:**:
    On separate machines, start the content nodes which will dynamically spawn authentication and file distribution nodes:
-   ```python ContentNode.py```
+   ```bash
+   python ContentNode.py
 4. **Start Client:**:
    On the client machine, start the client application:
-   ```python ClientNode.py
+   ```bash
+   python ClientNode.py
 
