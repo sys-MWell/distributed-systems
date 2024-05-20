@@ -26,12 +26,11 @@ The backend is designed to support load distribution among multiple nodes.
   - Dynamic spawning and termination of microservices based on load and client connections.
 
 ## Project Structure
-The project directory is structured as follows:
-.
-├── authentication node
-├── bootstrap node
-├── client node
-├── content node
+The project directory is structured as follows: <br>
+├── authentication node<br>
+├── bootstrap node <br>
+├── client node <br>
+├── content node <br>
 └── file distribution node
 
 ## Installation and Setup
