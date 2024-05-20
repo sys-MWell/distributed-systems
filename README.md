@@ -58,4 +58,6 @@ The project directory is structured as follows: <br>
    On the client machine, start the client application:
    ```bash
    python ClientNode.py
-
+   
+### Screeshot of Usage
+![image](https://github.com/sys-MWell/distributed-systems/assets/74254544/1da83b25-b0bb-40ce-ab64-402e53f7d9bb)
